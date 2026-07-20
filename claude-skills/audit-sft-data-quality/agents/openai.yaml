@@ -1,0 +1,4 @@
+interface:
+  display_name: "Audit SFT Data Quality"
+  short_description: "Base-eval-guided SFT data audits and design"
+  default_prompt: "Use $audit-sft-data-quality to map base pass@1 and pass@k results into skill priorities, audit candidate rows, and design the next verified SFT iteration."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Technical Writing Workflow"
+  short_description: "Plan, draft, audit, and polish technical prose"
+  default_prompt: "Use $technical-writing-workflow to turn this draft into clear, source-backed technical prose."

@@ -16,22 +16,18 @@ Guides and production-ready commands for Claude Code: skills, subagents, hooks, 
 
 **Which one do I need?** Facts → [memory](claude-memory-guide.md). Procedures → [skills](claude-skills-guide.md). Isolated/parallel work → [subagents](claude-subagents-guide.md). Guaranteed enforcement → [hooks](claude-hooks-guide.md). External systems → MCP.
 
-## 🛠️ Ready-to-Use Skill
+## 🛠️ Skills Collection
 
-The [claude-skills/](claude-skills/) collection:
-
-| Skill | Purpose |
-|-------|---------|
-| `/multi-mind` | Multi-specialist judgment analysis fanned out to parallel subagents, with adversarial cross-pollination rounds — for tradeoff/strategy questions where `/deep-research` (fact-finding) isn't the right tool |
+[claude-skills/](claude-skills/) — 11 installable skills in standard `SKILL.md` layout: multi-mind orchestration, SFT data auditing, experiment ops (tokenbending/worklog), paper OCR pipelines, writing workflows, Playwright/Manim/X tooling. See the [collection README](claude-skills/README.md) for the full table.
 
 ## Quick Start
 
 ```bash
-# Install the skill (project)
-mkdir -p .claude/skills
-cp -r claude-skills/multi-mind .claude/skills/
+# Install one skill
+cp -r claude-skills/multi-mind ~/.claude/skills/
 
-# Personal (all projects): use ~/.claude/skills/ instead
+# Or the whole collection
+cp -R claude-skills/*/ ~/.claude/skills/
 ```
 
 Then in any Claude Code session:

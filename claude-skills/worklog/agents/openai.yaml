@@ -1,0 +1,4 @@
+interface:
+  display_name: "Worklog"
+  short_description: "Issue-led work logging with tracked follow-ups"
+  default_prompt: "Use $worklog to run this as issue-led atomic work with comments, closeout summaries, and no hanging follow-up left untracked."

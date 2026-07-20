@@ -7,25 +7,49 @@ Production-ready skills in the standard `.claude/skills/<name>/SKILL.md` layout.
 ```bash
 # Project (shared via version control)
 mkdir -p .claude/skills
-cp -r claude-skills/multi-mind .claude/skills/
+cp -r claude-skills/<skill-name> .claude/skills/
 
 # Personal (all your projects)
-cp -r claude-skills/multi-mind ~/.claude/skills/
+cp -r claude-skills/<skill-name> ~/.claude/skills/
+
+# Everything at once
+cp -R claude-skills/*/ ~/.claude/skills/
 ```
 
 Skill directories are watched live — files take effect in a running session within seconds (a newly created top-level `skills/` directory needs a restart).
 
 ## Available Skills
 
-### 🧠 `/multi-mind`
-Multi-specialist collaborative analysis for **judgment questions** — architecture tradeoffs, strategy, design decisions. Dynamically assigns 4-6 decorrelated specialists, fans them out to parallel subagents for research and adversarial cross-pollination, then synthesizes across rounds without flattening disagreement.
+### Orchestration & analysis
+| Skill | Purpose |
+|-------|---------|
+| `/multi-mind` | Multi-specialist judgment analysis via parallel subagents — for tradeoff/strategy questions where `/deep-research` (fact-finding) isn't the right tool |
+| `audit-sft-data-quality` | Audit SFT datasets against the behavior they teach: contracts, hard gates, duplicates, contamination, train/review/reject dispositions |
 
-```
-/multi-mind "Should we adopt CRDTs for our collaborative editor?"
-/multi-mind "Postgres vs. FoundationDB for multi-tenant SaaS" rounds=5
-```
+### Research & experiment operations
+| Skill | Purpose |
+|-------|---------|
+| `tokenbending` | Experiment discipline: deterministic contract vs fuzzy choices, preserve-before-delete, stop-on-first-substantive-failure |
+| `worklog` | Issue-led atomic work logging: one issue per unit of work, comment journal, closeout checklist |
 
-Use `/deep-research` (bundled) for factual questions; use this when the answer depends on weighing expert perspectives.
+### Documents & OCR
+| Skill | Purpose |
+|-------|---------|
+| `paper-ocr-notes-pipeline` | Paper PDF/URL → grounded OCR artifacts + teachable `notes.md` (orchestrates `pdf-ocr-feedback` + `technical-writing-workflow`) |
+| `pdf-ocr-feedback` | High-accuracy OCR with self-scoring rubric and Maj@K consensus voting |
+
+### Writing
+| Skill | Purpose |
+|-------|---------|
+| `technical-writing-workflow` | Full writing workflow: ontology tables, outline contracts, rigor/plain-English/anti-LLM passes, audit scripts |
+| `blade-and-contract` | Provocative-but-defensible rhetoric: lead with the blade, anchor with the contract |
+
+### Tools & platforms
+| Skill | Purpose |
+|-------|---------|
+| `playwright` | Browser automation from the terminal via `playwright-cli` (includes wrapper script + command reference) |
+| `manim-math-explainer` | Manim Community math explainer scenes: style rules, templates, render loop |
+| `x-thread-reader` | Full X/Twitter threads via twitter-thread.com mirror + fallbacks |
 
 ## Writing Your Own
 

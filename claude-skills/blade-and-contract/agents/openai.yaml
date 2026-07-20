@@ -1,0 +1,4 @@
+interface:
+  display_name: "Blade and Contract"
+  short_description: "Provocative claims with exact contracts"
+  default_prompt: "Use $blade-and-contract to sharpen this claim into disciplined audacity with a clear operational contract."
