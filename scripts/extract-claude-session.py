@@ -11,6 +11,7 @@ Usage:
 
 import json
 import os
+import re
 import sys
 import argparse
 from datetime import datetime
@@ -27,14 +28,36 @@ class ClaudeSessionExtractor:
         if project_path is None:
             project_path = os.getcwd()
         
-        # Convert project path to Claude's format
-        self.claude_project_dir = self._get_claude_project_dir(project_path)
-        self.sessions_dir = Path.home() / '.claude' / 'projects' / self.claude_project_dir
+        self.sessions_dir = self._resolve_sessions_dir(project_path)
+    
+    @staticmethod
+    def _slugify(path: str) -> str:
+        """Approximate Claude Code's project directory naming (non-alphanumerics become '-')."""
+        return re.sub(r'[^a-zA-Z0-9]', '-', path)
+    
+    def _resolve_sessions_dir(self, project_path: str) -> Path:
+        """Find the sessions directory for a project, tolerating slug format changes.
         
-    def _get_claude_project_dir(self, project_path: str) -> str:
-        """Convert a project path to Claude's directory naming format."""
-        # Claude replaces / with - in directory names
-        return project_path.replace('/', '-')
+        Claude Code has used different slug rules over time (replacing '/' only,
+        then all non-alphanumerics). Try the current format first, then fall back
+        to matching directories by normalized comparison.
+        """
+        projects_root = Path.home() / '.claude' / 'projects'
+        candidates = [
+            projects_root / self._slugify(project_path),
+            projects_root / project_path.replace('/', '-'),  # legacy format
+        ]
+        for candidate in candidates:
+            if candidate.exists():
+                return candidate
+        # Fallback: compare normalized forms of existing directories
+        target = self._slugify(project_path).strip('-').lower()
+        if projects_root.exists():
+            for entry in projects_root.iterdir():
+                if entry.is_dir() and self._slugify(entry.name).strip('-').lower() == target:
+                    return entry
+        # Nothing matched; return the default so callers get a clean 'not found'
+        return candidates[0]
     
     def list_sessions(self) -> List[Tuple[str, datetime, int]]:
         """List all available sessions for the project.
@@ -108,18 +131,33 @@ class ClaudeSessionExtractor:
         return messages
     
     def _parse_content_blocks(self, content_blocks: List) -> str:
-        """Parse content blocks (used for tool interactions)."""
+        """Parse content blocks (text, thinking, tool interactions, attachments)."""
         parsed = []
         for block in content_blocks:
             if isinstance(block, dict):
-                if block.get('type') == 'text':
+                block_type = block.get('type')
+                if block_type == 'text':
                     parsed.append(block.get('text', ''))
-                elif block.get('type') == 'tool_use':
+                elif block_type == 'thinking':
+                    parsed.append(f"[Thinking]\n{block.get('thinking', '')}")
+                elif block_type == 'redacted_thinking':
+                    parsed.append('[Thinking — redacted]')
+                elif block_type == 'tool_use':
                     tool_name = block.get('name', 'unknown')
                     tool_input = block.get('input', {})
                     parsed.append(f"[Tool: {tool_name}]\n{json.dumps(tool_input, indent=2)}")
-                elif block.get('type') == 'tool_result':
-                    parsed.append(f"[Tool Result]\n{block.get('content', '')}")
+                elif block_type == 'tool_result':
+                    content = block.get('content', '')
+                    if isinstance(content, list):
+                        # Nested blocks (e.g. text + images inside a tool result)
+                        content = self._parse_content_blocks(content)
+                    parsed.append(f"[Tool Result]\n{content}")
+                elif block_type == 'image':
+                    parsed.append('[Image]')
+                elif block_type == 'document':
+                    parsed.append(f"[Document: {block.get('title', 'untitled')}]")
+                else:
+                    parsed.append(f"[{block_type or 'unknown'} block]")
             else:
                 parsed.append(str(block))
         return '\n'.join(parsed)

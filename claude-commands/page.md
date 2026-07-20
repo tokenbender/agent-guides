@@ -1,11 +1,20 @@
+---
+description: Save the full session history to disk with citations, then prepare for context compaction — OS-style paging for Claude's memory
+argument-hint: "[filename_prefix] [output_directory]"
+allowed-tools: Bash, Read, Write, WebFetch
+disable-model-invocation: true
+---
+
 # Page - Session History Dump with Citations and Memory Management
 
-Like OS paging for processes, this command saves the entire conversation state to disk by extracting it from Claude Code's local storage (~/.claude/projects/). After running this command, you can use `/compact` to free up Claude's context memory.
+Like OS paging for processes, this command saves the entire conversation state to disk by extracting it from Claude Code's local storage (`~/.claude/projects/`). After running this command, you can use `/compact` to free up Claude's context memory.
+
+> **Built-in alternatives:** `/export` saves the current conversation as plain text, and `/rewind` rolls back to checkpoints. Use `page` when you need the full-citation, two-file (full + compact) archive this command produces.
 
 ## Usage
 
 ```
-/project:page [filename_prefix] [output_directory]
+/page [filename_prefix] [output_directory]
 ```
 
 ## Arguments
@@ -39,10 +48,11 @@ This command implements a memory management strategy similar to OS paging:
      - Optimized for future context loading
 
 3. **Memory Management Workflow**:
-   - First: Run `/project:page` to save everything to disk
+   - First: Run `/page` to save everything to disk
    - Then: Run `/compact` to free up Claude's context memory
    - Result: Fresh context while preserving full history
    - Essential for long development sessions
+   - Related: `/rewind` for rolling back to an earlier checkpoint instead of compacting
 
 **Note**: This prepares for `/compact` by saving everything first. Run `/compact` after this command completes.
 
@@ -203,13 +213,13 @@ Both files use consistent markdown formatting with proper citations and are imme
 
 ```bash
 # Basic usage - creates session-dump files in current directory
-/project:page
+/page
 
 # Custom prefix
-/project:page feature-implementation
+/page feature-implementation
 
 # Custom prefix and directory
-/project:page bug-fix-session ./docs/sessions/
+/page bug-fix-session ./docs/sessions/
 
 # Results in current directory (or specified directory):
 # - feature-implementation-2025-06-20_143022-full.md

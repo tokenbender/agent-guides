@@ -1,218 +1,101 @@
 # Claude Code Custom Commands Collection
 
-This directory contains reusable custom commands for Claude Code that enhance productivity and enable advanced workflows.
+Production-ready commands and skills for Claude Code. Every file includes YAML frontmatter (tool pre-approval, argument hints, invocation control) — see the [Custom Commands & Skills Guide](../claude-custom-commands.md) for what each field does.
 
 ## Installation
 
-### Option 1: Project-Level Commands
-Copy commands to your project's `.claude/commands/` directory:
+Commands work from either layout — pick one:
+
 ```bash
-# In your project root
+# As commands (single files)
 mkdir -p .claude/commands
 cp claude-commands/*.md .claude/commands/
+
+# As skills (recommended; one directory per skill)
+mkdir -p .claude/skills
+for f in claude-commands/*.md; do
+  name=$(basename "$f" .md)
+  mkdir -p ".claude/skills/$name"
+  cp "$f" ".claude/skills/$name/SKILL.md"
+done
 ```
 
-### Option 2: Global Commands  
-Copy commands to your global Claude directory for use across all projects:
-```bash
-# Global installation
-mkdir -p ~/.claude/commands
-cp claude-commands/*.md ~/.claude/commands/
-```
+- **Project install** (`.claude/`): shared with your team via version control
+- **Personal install** (`~/.claude/`): available across all your projects
+- Invoke as `/name` from either location (the old `/project:` / `/user:` prefixes are gone)
 
 ## Available Commands
 
-### 🔍 Search Commands
+### 🔍 `/search-prompts`
+Search across all Claude Code conversation history (session JSONL files) for a keyword.
+Returns matching prompts, session summaries, and resumable session IDs (`claude --resume <id>`).
 
-#### `/project:search-prompts` or `/user:search-prompts`
-**Purpose**: Search across all your Claude Code conversation history  
-**Usage**: `/project:search-prompts "search term"`
-
-**What it provides**:
-- Multi-source search across database and project histories
-- Session-based search with resumable conversation IDs
-- Advanced pattern matching and temporal filtering
-- Conversation summary search for high-level topics
-- Integration with `claude --resume` for continuing relevant discussions
-
-**Example**: `/project:search-prompts "machine learning pipeline"`
-
-### 📝 Code Analysis Commands
-
-#### `/project:analyze-function` or `/user:analyze-function`
-**Purpose**: Deep line-by-line analysis of any function in your codebase  
-**Usage**: `/project:analyze-function filename:function_name` or `/project:analyze-function filename function_name`
-
-**What it provides**:
-- Technical implementation details and performance implications
-- Edge cases and potential issues  
-- Connection to broader codebase architecture
-- Critical details often missed from casual reading
-- Mathematical foundations and optimization techniques
-
-**Example**: `/project:analyze-function train.py:detect_words_gpu`
-
-### 🧠 Multi-Mind Collaboration Command
-
-#### `/project:multi-mind` or `/user:multi-mind`
-**Purpose**: Execute multi-specialist collaborative analysis using independent subagents  
-**Usage**: `/project:multi-mind "topic" [rounds=3]`
-
-**Features**:
-- **Subagent Architecture**: Each specialist runs as independent subagent via Task tool
-- **Parallel Processing**: True concurrent execution of specialist research
-- **Dynamic Assignment**: 4-6 specialists chosen based on topic complexity
-- **Web Search Integration**: Each subagent has WebSearch access for fresh knowledge
-- **Anti-Repetition**: Progressive insight building across rounds
-- **Cross-Pollination**: Specialists review and build on each other's findings
-
-**Examples**:
-```bash
-/project:multi-mind "Should we implement quantum error correction in our ML pipeline?"
-/project:multi-mind "Climate change mitigation strategies" rounds=5
-/project:multi-mind "Scaling transformer architectures beyond current GPU memory limits"
+```
+/search-prompts "machine learning pipeline"
 ```
 
-### 📄 Session Management Commands
+### 📝 `/analyze-function`
+Deep line-by-line analysis of any function: implementation details, performance implications, edge cases, and architectural context. Read-only tools pre-approved.
 
-#### `/project:page` or `/user:page`
-**Purpose**: Save complete session history with citations, then prepare for memory compaction  
-**Usage**: `/project:page [filename_prefix] [output_directory]`
-
-**Features**:
-- **OS-Style Paging**: Saves conversation state to disk before memory compaction
-- **Full Citations**: Complete source attribution and indexed references
-- **Compact Summary**: Executive summary included at top of full history
-- **Memory Management**: Prepares for `/compact` to free Claude's context
-- **Default Location**: Saves to current working directory unless specified
-
-**Generated Files**:
-- `{prefix}-{timestamp}-full.md` - Complete history with citations
-- `{prefix}-{timestamp}-compact.md` - Executive summary for future loading
-
-**Example**: 
-```bash
-/project:page                                    # Basic usage
-/project:page feature-implementation             # Custom prefix
-/project:page bug-fix ./docs/sessions/          # Custom location
-# After completion, run: /compact
+```
+/analyze-function train.py:detect_words_gpu
 ```
 
-### 🔧 Command Management
+### 🧠 `/multi-mind`
+Multi-specialist collaborative analysis using parallel subagents. Dynamically assigns 4-6 decorrelated specialists, runs research and cross-pollination rounds, and synthesizes without flattening disagreement.
 
-#### `/project:crud-claude-commands` or `/user:crud-claude-commands`
-**Purpose**: Dynamically manage Claude Code custom commands (Create, Read, Update, Delete)  
-**Usage**: `/project:crud-claude-commands <operation> <command-name> [content]`
-
-**Operations**:
-- **CREATE**: Generate new command from description
-- **READ**: Display existing command content
-- **UPDATE**: Modify command based on instructions
-- **DELETE**: Remove command from system
-- **LIST**: Show all available commands
-
-**Features**:
-- **Dynamic Generation**: Creates commands from natural language descriptions
-- **Auto-Sync**: Automatically updates agent-guides repository if present
-- **Git Integration**: Commits and pushes changes to remote
-- **Template Compliance**: Ensures proper command structure
-- **Error Handling**: Fuzzy matching for command names
-
-**Examples**:
-```bash
-/project:crud-claude-commands create git-flow "Create git workflow automation"
-/project:crud-claude-commands update page "Add JSON export format"
-/project:crud-claude-commands delete old-command
-/project:crud-claude-commands list
+```
+/multi-mind "Should we adopt CRDTs for our collaborative editor?"
+/multi-mind "Postgres vs. FoundationDB for multi-tenant SaaS" rounds=5
 ```
 
-## Multi-Mind System Architecture
+### 📄 `/page`
+OS-style paging for Claude's context: saves the complete session history (with full citations) to a `-full.md` file plus a `-compact.md` executive summary, then hands off to `/compact` to free context. Built-in alternatives: `/export` (plain text) and `/rewind` (checkpoints).
 
-### Core Principles
-- **Many Minds**: 4-6 dynamically assigned specialists per topic
-- **Unique Specialists**: Each has distinct domain expertise with minimal correlation
-- **Error Decorrelation**: Different analytical approaches catch different blind spots  
-- **Active Moderation**: Drives progress, prevents repetition, synthesizes insights
-- **Progressive Knowledge**: Web search integration ensures fresh information each round
+```
+/page                                  # session-dump files in cwd
+/page feature-implementation           # custom prefix
+/page bug-fix ./docs/sessions/         # custom location
+```
 
-### Specialist Selection Criteria
-- Unique domain expertise relevant to the topic
-- Different methodological approaches (quantitative/qualitative, theoretical/practical)
-- Varied temporal perspectives (historical, current, future-focused)
-- Distinct risk/opportunity sensitivities
-- Independent information sources and knowledge bases
+### 🔧 `/crud-claude-commands`
+Manage the command/skill collection itself — create, read, update, delete, list — generating files with correct modern frontmatter.
 
-### Anti-Repetition Mechanisms
-- Moderator tracks coverage vs. gaps requiring exploration
-- Specialists build on previous insights rather than restating
-- Focus on unique expertise contributions to collective understanding
-- Challenge emerging consensus from specialist perspectives
+```
+/crud-claude-commands create git-flow "automate feature branches, PRs, merges"
+/crud-claude-commands list
+```
 
-## Command Development
+## Writing Your Own
 
-### Creating New Commands
-1. Create a new `.md` file in this directory
-2. Use `$ARGUMENTS` placeholder for dynamic parameters
-3. Include clear usage instructions and examples
-4. Test the command in a Claude Code session
-5. Update this README with the new command
+Use this template (works for both `.claude/commands/<name>.md` and `.claude/skills/<name>/SKILL.md`):
 
-### Command Template
-```markdown
-# Command Description
-Brief description of what this command does.
+```yaml
+---
+description: What it does and when to use it — Claude routes on this
+argument-hint: "<expected args>"
+allowed-tools: Read, Grep, Glob
+---
 
-**Usage**: `/project:command-name $ARGUMENTS`
+# Command Name
 
-## Instructions
-Detailed instructions for Claude on how to execute this command.
+Instructions for Claude. Use $ARGUMENTS, $0/$1, named arguments,
+!`shell injection`, and @file references as needed.
 
 ## Examples
-Example usage scenarios and expected outputs.
+/command-name example input
 ```
 
-### Best Practices
-- Make commands reusable across different projects
-- Include clear success criteria and expected outcomes
-- Provide examples that demonstrate the command's value
-- Use namespacing with subdirectories for related commands
-- Document any prerequisites or dependencies
+Frontmatter quick reference: `description`, `when_to_use`, `argument-hint`, `arguments`, `allowed-tools`, `disallowed-tools`, `disable-model-invocation`, `user-invocable`, `model`, `effort`, `context: fork`, `agent`, `hooks`, `paths`. Full details in the [Custom Commands & Skills Guide](../claude-custom-commands.md).
 
-## Contributing
+## Related Guides
 
-To contribute new commands:
-1. Create the command file following the template
-2. Test it in a real Claude Code session  
-3. Add documentation to this README
-4. Submit a pull request with clear description of the command's purpose and benefits
-
-## Command Categories
-
-### 🔍 Search & Discovery
-- `search-prompts.md` - Comprehensive conversation history search
-
-### 📊 Analysis & Research
-- `analyze-function.md` - Deep function analysis
-- `multi-mind.md` - Multi-specialist collaborative analysis with subagents
-
-### 📄 Session Management
-- `page.md` - Session history dump with citations and memory management
-
-### 🔧 Development Workflow
-- `crud-claude-commands.md` - Dynamic command management (CRUD operations)
-
-### 📚 Documentation & Learning  
-*(Future commands for documentation generation)*
-
-### 🚀 Deployment & Operations
-*(Future commands for deployment assistance)*
+- [Custom Commands & Skills Guide](../claude-custom-commands.md)
+- [Agent Skills Guide](../claude-skills-guide.md) — supporting files, subagent execution, distribution
+- [Subagents Guide](../claude-subagents-guide.md) — what powers `/multi-mind`
+- [Conversation Search Guide](../claude-conversation-search-guide.md) — the storage format behind `/search-prompts`
+- [Claude Code docs](https://code.claude.com/docs/en/skills)
 
 ## License
 
-These commands are provided under the same license as the agent-guides repository. Feel free to modify and adapt them for your specific needs.
-
-## Related Resources
-
-- [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code/slash-commands)
-- [Claude Custom Commands Guide](../claude-custom-commands.md)
-- [Claude Code Search Best Practices](../claude-code-search-best-practices.md)
+Same license as the agent-guides repository. Modify and adapt freely.

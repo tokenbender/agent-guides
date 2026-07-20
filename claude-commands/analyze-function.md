@@ -1,6 +1,12 @@
+---
+description: Deep line-by-line analysis of a function — implementation details, performance, edge cases, and architectural context
+argument-hint: "<filename:function_name>"
+allowed-tools: Read, Grep, Glob
+---
+
 Analyze the specified function from the given file with detailed line-by-line breakdown.
 
-**Usage**: `/project:analyze-function filename:function_name` or `/project:analyze-function filename function_name`
+**Usage**: `/analyze-function filename:function_name` or `/analyze-function filename function_name`
 
 **Arguments**: 
 - `filename`: The file containing the function to analyze
@@ -24,7 +30,7 @@ The analysis will focus on both the immediate functionality and the broader arch
 
 ## Example Analysis
 
-**Usage**: `/project:analyze-function train.py:detect_words_gpu`
+**Usage**: `/analyze-function train.py:detect_words_gpu`
 
 ### **Context & Purpose**
 This function is part of the `CurriculumManager` class in a sophisticated GRPO (Group Relative Policy Optimization) training system. It's designed to efficiently detect and count words of different lengths in character-level sequences **entirely on GPU** to support curriculum learning stages that reward proper word formation.

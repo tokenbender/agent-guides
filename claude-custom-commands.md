@@ -1,136 +1,191 @@
-# How to Add Custom Commands to Claude Code
+# Custom Commands & Skills in Claude Code
 
-Custom slash commands in Claude Code allow you to define frequently-used prompts as reusable commands, improving workflow efficiency and consistency.
+Claude Code's custom slash commands are files you write once and invoke with `/name`. As of the current releases, **custom commands have been merged into skills**: a file at `.claude/commands/deploy.md` and a skill at `.claude/skills/deploy/SKILL.md` both create `/deploy` and work the same way. Existing `.claude/commands/` files keep working and support the same frontmatter.
 
-## Command Types
+Skills add a few things plain command files can't do: a directory for supporting files (templates, scripts, examples), automatic invocation by Claude when relevant, and subagent execution. Prefer skills for anything new.
 
-### Project Commands
-Commands shared with your team and stored in your repository.
+## Where Commands & Skills Live
 
-**Location**: `.claude/commands/`  
-**Prefix**: `/project:`
+| Location | Path | Applies to |
+|----------|------|------------|
+| Personal | `~/.claude/commands/*.md` or `~/.claude/skills/<name>/SKILL.md` | All your projects |
+| Project | `.claude/commands/*.md` or `.claude/skills/<name>/SKILL.md` | This project (commit to share with your team) |
+| Plugin | `<plugin>/skills/<name>/SKILL.md` | Wherever the plugin is enabled, namespaced as `/plugin:name` |
+
+If a skill and a command share a name, the skill wins. Whatever the location, you invoke it as `/name` — the old `/project:` and `/user:` prefixes are gone.
+
+### Quick start
 
 ```bash
-# Create a project command
+# Command (single file)
 mkdir -p .claude/commands
-echo "Analyze this code for performance issues and suggest optimizations:" > .claude/commands/optimize.md
+echo "Analyze this code for performance issues and suggest optimizations." > .claude/commands/optimize.md
+
+# Skill (directory, recommended)
+mkdir -p .claude/skills/optimize
 ```
 
-**Usage**: `/project:optimize`
+```yaml
+# .claude/skills/optimize/SKILL.md
+---
+description: Analyze code for performance issues and suggest optimizations. Use when the user asks to speed something up or profile hot paths.
+argument-hint: "[file-or-function]"
+allowed-tools: Read, Grep, Glob, Bash
+---
 
-### Personal Commands
-Commands available across all your projects.
-
-**Location**: `~/.claude/commands/`  
-**Prefix**: `/user:`
-
-```bash
-# Create a personal command
-mkdir -p ~/.claude/commands
-echo "Review this code for security vulnerabilities:" > ~/.claude/commands/security-review.md
+Analyze $ARGUMENTS for performance issues: allocation patterns, hot loops,
+unnecessary copies, async blocking. Suggest concrete optimizations with
+expected impact.
 ```
 
-**Usage**: `/user:security-review`
+Test both ways: type `/optimize src/parser.ts`, or just ask "make the parser faster" and let Claude load the skill automatically.
 
-## Advanced Features
+## Frontmatter Reference
 
-### Namespacing
-Organize commands in subdirectories to create namespaced commands.
+All fields optional; `description` is strongly recommended — Claude uses it to decide when to load the skill on its own.
 
-**Structure**: `<prefix>:<namespace>:<command>`
+| Field | Purpose |
+|-------|---------|
+| `description` | What it does and when to use it. Front-load the key use case (listing is truncated at 1,536 chars) |
+| `when_to_use` | Extra trigger phrases/examples appended to the description |
+| `argument-hint` | Autocomplete hint, e.g. `[issue-number]` |
+| `arguments` | Named positional args, e.g. `[issue, branch]` → `$issue`, `$branch` |
+| `disable-model-invocation` | `true` = only runs when you type `/name` |
+| `user-invocable` | `false` = hidden from the `/` menu (background knowledge only) |
+| `allowed-tools` | Tools pre-approved while the skill runs (`Read, Grep, Bash`) |
+| `disallowed-tools` | Tools removed while the skill is active |
+| `model` | Model override for the turn (`sonnet`, `opus`, `haiku`, `inherit`) |
+| `effort` | Effort override: `low`, `medium`, `high`, `xhigh`, `max` |
+| `context` | `fork` = run in an isolated subagent context |
+| `agent` | Which subagent type to use with `context: fork` |
+| `hooks` | Lifecycle hooks scoped to this skill |
+| `paths` | Globs limiting auto-activation to matching files |
 
-```bash
-# Creates /project:frontend:component
-mkdir -p .claude/commands/frontend
-echo "Create a React component following our design system:" > .claude/commands/frontend/component.md
+## Arguments & Dynamic Content
+
+### Positional and named arguments
+
+```yaml
+---
+description: Create a fix branch for a GitHub issue
+arguments: [issue, branch]
+---
+
+Fix issue #$issue following our coding standards. Work on branch $branch.
 ```
 
-### Arguments
-Pass dynamic values using the `$ARGUMENTS` placeholder.
-
-```bash
-# Command definition
-echo "Fix issue #$ARGUMENTS following our coding standards" > .claude/commands/fix-issue.md
-
-# Usage
-/project:fix-issue 123
+```
+/fix-issue 123 bug/login-loop
 ```
 
-## Command Syntax
+- `$ARGUMENTS` — everything passed after the command name
+- `$0`, `$1`, `$2` — positional (0-based; `$ARGUMENTS[0]` also works)
+- `$name` — named, mapped to positions by the `arguments` list
 
-```
-/<prefix>:<command-name> [arguments]
-```
+### Dynamic context injection
 
-- `<prefix>`: `project` or `user`
-- `<command-name>`: Filename without `.md` extension
-- `[arguments]`: Optional dynamic values
+Lines of the form `` !`command` `` execute *before* Claude sees the skill; the output is inlined into the prompt. Perfect for grounding in live state:
 
-## File Requirements
+```markdown
+## Current changes
 
-- Use Markdown format (`.md` extension)
-- Place in appropriate commands directory
-- Content becomes the prompt sent to Claude
+!`git diff HEAD --stat`
 
-## Examples
+## Recent commits
 
-### Code Review Command
-```bash
-echo "Please review this code for:
-- Code quality and best practices
-- Security vulnerabilities
-- Performance optimizations
-- Documentation completeness
+!`git log --oneline -5`
 
-Focus on: $ARGUMENTS" > .claude/commands/review.md
+Summarize the state of the working tree above.
 ```
 
-### Bug Triage Command
-```bash
-echo "Analyze this bug report and provide:
-1. Root cause analysis
-2. Severity assessment
-3. Recommended fix approach
-4. Testing strategy
+### File references
 
-Bug details: $ARGUMENTS" > .claude/commands/triage.md
-```
+`@path/to/file` inlines a file's content into the skill prompt.
 
-### Architecture Review
-```bash
-mkdir -p .claude/commands/architecture
-echo "Review this architectural design for:
-- Scalability concerns
-- Security implications
-- Maintainability
-- Best practices alignment
+### Environment substitutions
 
-Focus area: $ARGUMENTS" > .claude/commands/architecture/review.md
-```
+`${CLAUDE_SESSION_ID}`, `${CLAUDE_SKILL_DIR}` (the skill's own directory — use it to call bundled scripts), `${CLAUDE_PROJECT_DIR}`, `${CLAUDE_EFFORT}`.
 
-## Best Practices
+## Namespacing
 
-1. **Keep commands focused**: Each command should have a single, clear purpose
-2. **Use descriptive names**: Command names should clearly indicate their function
-3. **Leverage arguments**: Make commands flexible with `$ARGUMENTS` placeholder
-4. **Organize with namespaces**: Group related commands in subdirectories
-5. **Share project commands**: Commit `.claude/commands/` to version control for team consistency
-6. **Document commands**: Consider adding a commands index in your project README
+Subdirectories under `.claude/commands/` create namespaced commands: `.claude/commands/frontend/component.md` → `/frontend:component`. Nested `.claude/skills/` directories in monorepo packages are discovered on demand when Claude works in those directories.
 
-## Built-in Commands Reference
+## Built-in Commands & Bundled Skills You'll Use Daily
+
+Type `/` for the full list. Highlights:
 
 | Command | Purpose |
 |---------|---------|
-| `/help` | Get usage help |
-| `/clear` | Clear conversation history |
-| `/review` | Request code review |
-| `/memory` | Edit CLAUDE.md memory files |
-| `/cost` | Show token usage statistics |
-| `/model` | Select or change AI model |
+| `/init` | Generate a starter `CLAUDE.md` (set `CLAUDE_CODE_NEW_INIT=1` for the interactive flow that also sets up skills and hooks) |
+| `/memory` | Edit memory files, manage auto-memory |
+| `/compact [focus]` | Summarize the conversation to free context |
+| `/context` | Visualize what's filling the context window |
+| `/rewind` | Roll code/conversation back to a checkpoint |
+| `/resume`, `/branch`, `/fork` | Reopen, branch, or copy conversations |
+| `/plan` | Plan mode before large changes |
+| `/model`, `/effort` | Switch model / reasoning effort |
+| `/tasks`, `/background` | Manage background agents |
+| `/permissions` | Approval rules |
+| `/usage` | Token usage breakdown (alias: `/cost`) |
+| `/doctor` | Setup checkup — diagnoses *and fixes* config issues |
+| `/export` | Export the conversation as text |
+
+Bundled **skills** (prompt-based, overridable by your own same-name skill): `/code-review`, `/security-review`, `/debug`, `/batch` (parallel large-scale changes in worktrees), `/loop` (scheduled prompts), `/run`, `/verify`, `/deep-research`, `/fewer-permission-prompts`, `/claude-api`.
+
+## Best Practices
+
+1. **Write the description for the router.** "Use when the user asks X, Y, Z" gets auto-invoked correctly; vague descriptions never fire.
+2. **One job per skill.** Compose with skill chaining (`/skill-a /skill-b rest of prompt`) instead of building mega-skills.
+3. **Keep the body lean.** Once loaded, skill content stays in context for the rest of the session — every line is a recurring token cost.
+4. **Pre-approve narrowly.** `allowed-tools: Read, Grep` beats blanket access; use `disable-model-invocation: true` for destructive or deploy-type workflows.
+5. **Ground with injection.** Prefer `` !`git status` `` over asking Claude to check — the fact arrives in the prompt.
+6. **Commit project skills.** `.claude/skills/` in the repo = shared team capability, versioned like code.
+7. **Move procedures out of CLAUDE.md.** Facts stay in CLAUDE.md; multi-step procedures belong in skills.
+
+## Examples
+
+### Code review with scoped tools
+
+```yaml
+---
+description: Review changed code for quality, security, and performance issues
+argument-hint: "[file-or-directory]"
+allowed-tools: Read, Grep, Glob, Bash
+context: fork
+---
+
+Review $ARGUMENTS for:
+- Correctness bugs and edge cases
+- Security vulnerabilities (injection, secrets, authz gaps)
+- Performance problems (N+1, unbounded loops, allocations in hot paths)
+
+!`git diff --stat HEAD~1`
+
+Report findings by severity with file:line references. Do not modify files.
+```
+
+### Bug triage
+
+```yaml
+---
+description: Triage a bug report into root cause, severity, and fix plan
+argument-hint: "<bug description>"
+disable-model-invocation: true
+---
+
+Analyze this bug report and provide:
+1. Root cause hypothesis with evidence from the codebase
+2. Severity assessment (blocker / high / medium / low)
+3. Recommended fix approach
+4. Test that would have caught it
+
+Bug: $ARGUMENTS
+```
 
 ## See Also
 
-- [Claude Code Search Best Practices](claude-code-search-best-practices.md) - Comprehensive guide to effective searching in Claude Code
-- [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code/slash-commands)
-- [Interactive Mode](https://docs.anthropic.com/en/docs/claude-code/interactive-mode)
-- [Memory Management](https://docs.anthropic.com/en/docs/claude-code/memory)
+- [Agent Skills Guide](claude-skills-guide.md) — skills in depth: supporting files, subagent execution, distribution
+- [Subagents Guide](claude-subagents-guide.md) — `context: fork` and `.claude/agents/`
+- [Hooks Guide](claude-hooks-guide.md) — deterministic automation around the agent loop
+- [Commands Collection](claude-commands/) — ready-to-use commands from this repo
+- [Claude Code docs: skills](https://code.claude.com/docs/en/skills) · [commands reference](https://code.claude.com/docs/en/commands)

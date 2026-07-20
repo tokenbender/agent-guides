@@ -1,155 +1,102 @@
-# CRUD Claude Commands - Dynamic Command Management
+---
+description: Create, read, update, delete, and list Claude Code custom commands and skills
+argument-hint: "<operation> <name> [instructions]"
+disable-model-invocation: true
+---
 
-Manage Claude Code custom commands through Create, Read, Update, and Delete operations.
+# CRUD Claude Commands - Dynamic Command & Skill Management
 
-**Usage**: `/project:crud-claude-commands <operation> <command-name> [content]`
+Manage Claude Code custom commands and skills through Create, Read, Update, and Delete operations.
+
+**Usage**: `/crud-claude-commands <operation> <name> [instructions]`
+
+Note: custom commands and skills are the same mechanism now. Default to the **skill layout** (`.claude/skills/<name>/SKILL.md`) for anything new; use the flat command layout (`.claude/commands/<name>.md`) only for simple single-file prompts.
 
 ## Operations
 
+| Operation | Usage | Example |
+|-----------|-------|---------|
+| CREATE | `/crud-claude-commands create <name> "what it should do"` | `create git-flow "automate feature branches, PRs, merges"` |
+| READ | `/crud-claude-commands read <name>` | `read multi-mind` |
+| UPDATE | `/crud-claude-commands update <name> "changes"` | `update page "add JSON export format"` |
+| DELETE | `/crud-claude-commands delete <name>` | `delete old-command` |
+| LIST | `/crud-claude-commands list` | — |
+
+## Implementation
+
+Parse the operation from $ARGUMENTS and execute:
+
 ### CREATE
-Create a new Claude command from user instructions.
+1. Parse name and description.
+2. Choose layout: skill (default) or flat command if trivially simple.
+3. Write the file with proper frontmatter:
 
-**Usage**: `/project:crud-claude-commands create <command-name> "description of what the command should do"`
+   **Skill** — `.claude/skills/<name>/SKILL.md`:
+   ```yaml
+   ---
+   description: <what it does + when to use it — this drives auto-invocation>
+   argument-hint: "<expected args>"
+   allowed-tools: <minimal tool set>
+   ---
 
-**Example**:
-```bash
-/project:crud-claude-commands create git-flow "Create a command that automates git flow operations like creating feature branches, PRs, and merging"
-```
+   # <Name>
+
+   <concise instructions for Claude>
+
+   ## Examples
+   /<name> <example usage>
+   ```
+
+   **Command** — `.claude/commands/<name>.md`: same frontmatter, same body, no directory.
+
+4. Frontmatter guidance:
+   - `description`: front-load the use case; it's what Claude routes on
+   - `allowed-tools`: pre-approve the minimum (`Read, Grep` for read-only; add `Bash, Write, Edit` only when needed)
+   - `disable-model-invocation: true` for deploy/destructive workflows
+   - `context: fork` for heavy analysis that shouldn't fill the main context
+   - Use `$ARGUMENTS`, `$0`/`$1`, named `arguments:`, `` !`cmd` `` injection, and `@file` references as appropriate
+5. Confirm with the file path and a one-line summary.
 
 ### READ
-Display the content of an existing Claude command.
-
-**Usage**: `/project:crud-claude-commands read <command-name>`
-
-**Example**:
-```bash
-/project:crud-claude-commands read multi-mind
-```
+1. Check `.claude/skills/<name>/SKILL.md` first, then `.claude/commands/<name>.md`, then the `~/.claude/` equivalents.
+2. Display the full content with its location.
 
 ### UPDATE
-Modify an existing Claude command based on user instructions.
-
-**Usage**: `/project:crud-claude-commands update <command-name> "description of changes"`
-
-**Example**:
-```bash
-/project:crud-claude-commands update page "Add support for JSON export format and include timestamp in filenames"
-```
+1. Read the existing file (skill first, as above).
+2. Apply the requested changes, preserving valid frontmatter.
+3. Show a before/after summary of what changed.
 
 ### DELETE
-Remove a Claude command from the system.
-
-**Usage**: `/project:crud-claude-commands delete <command-name>`
-
-**Example**:
-```bash
-/project:crud-claude-commands delete old-command
-```
+1. Locate the file (skill directory or command file).
+2. Show its content, then delete (remove the whole directory for skills).
+3. Confirm deletion.
 
 ### LIST
-Show all available Claude commands.
+1. Enumerate `.claude/skills/*/SKILL.md`, `.claude/commands/*.md`, and `~/.claude/` equivalents.
+2. For each: name, layout, description (from frontmatter), and scope (project/personal).
+3. Also list relevant bundled skills (`/code-review`, `/debug`, `/batch`…) so users don't recreate them.
 
-**Usage**: `/project:crud-claude-commands list`
+## Syncing to agent-guides
 
-## Implementation Instructions
+This collection lives at `https://github.com/tokenbender/agent-guides` (`claude-commands/` directory). After CREATE/UPDATE/DELETE:
 
-Execute the requested CRUD operation:
-
-### For CREATE:
-1. Parse the command name and description
-2. Generate appropriate command content based on description
-3. Create the command file at `.claude/commands/{command-name}.md`
-4. Follow the standard command template:
-   ```markdown
-   # Command Title
-   
-   Brief description of the command.
-   
-   **Usage**: `/project:{command-name} $ARGUMENTS`
-   
-   ## Implementation
-   
-   [Detailed instructions for Claude]
-   
-   ## Examples
-   
-   [Usage examples]
-   ```
-5. Confirm creation with file path
-
-### For READ:
-1. Check if command exists at `.claude/commands/{command-name}.md`
-2. Read and display the full content
-3. Show usage examples if present
-
-### For UPDATE:
-1. Read existing command content
-2. Apply requested modifications based on user description
-3. Preserve command structure while updating functionality
-4. Save updated content
-5. Show before/after summary of changes
-
-### For DELETE:
-1. Confirm command exists
-2. Display command content for reference
-3. Delete the file
-4. Confirm deletion
-
-### For LIST:
-1. List all `.md` files in `.claude/commands/`
-2. Extract and display:
-   - Command name
-   - Brief description (first paragraph)
-   - Usage syntax
-
-## Command Synchronization
-
-After any CREATE, UPDATE, or DELETE operation:
-
-1. **Agent-guides repository reference**:
-   - Repository: `https://github.com/tokenbender/agent-guides`
-   - Commands directory: `/claude-commands/`
-   - Scripts directory: `/scripts/`
-
-2. **Sync instructions**:
-   - Inform user to manually sync changes to the agent-guides repository
-   - Provide the command content for easy copy/paste
-   - Suggest creating a PR if appropriate
-
-3. **Reference examples**:
-   - View existing commands: https://github.com/tokenbender/agent-guides/tree/main/claude-commands
-   - Extract session script: https://github.com/tokenbender/agent-guides/blob/main/scripts/extract-claude-session.py
-   - Repository README: https://github.com/tokenbender/agent-guides/blob/main/README.md
+1. Show the user the final file content for easy copying.
+2. If the agent-guides repo is checked out locally, offer to copy the file into `claude-commands/` and update `claude-commands/README.md`.
+3. Suggest a PR for generally useful commands.
 
 ## Error Handling
 
-- **Command not found**: Suggest similar commands using fuzzy matching
-- **Invalid operation**: Show valid operations (create, read, update, delete, list)
-- **Permission errors**: Inform user about file access issues
-- **Git errors**: Report but don't fail the primary operation
+- **Not found**: fuzzy-match against existing names and suggest the closest
+- **Ambiguous name** (both skill and command exist): show both, ask which
+- **Invalid operation**: list valid operations
+- **Permission errors**: report the path that failed
 
-## Success Criteria
+## Quality Bar for Generated Commands
 
-- Command operations complete successfully
-- Files are properly formatted and functional
-- Changes are synchronized to agent-guides if available
-- User receives clear confirmation of actions taken
-- Git commits are descriptive and accurate
+- Reusable across projects, not one-off
+- `description` written for the auto-invocation router
+- Minimal `allowed-tools`
+- Concise body — loaded content stays in context for the session
+- At least one usage example
 
-## Examples of Generated Commands
-
-When creating commands, consider these patterns:
-
-1. **Analysis commands**: Like analyze-function, multi-mind
-2. **Workflow commands**: Like page, search-prompts  
-3. **Automation commands**: Git operations, testing, deployment
-4. **Documentation commands**: Generate docs, update READMEs
-
-Ensure generated commands are:
-- Reusable across projects
-- Well-documented with examples
-- Follow established patterns
-- Include error handling
-- Provide clear output
-
-Execute the requested CRUD operation now.
+Execute the requested operation now.

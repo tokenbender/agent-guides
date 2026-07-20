@@ -8,7 +8,7 @@ Claude Code goes beyond traditional text search by understanding code structure,
 
 ## 1. Natural Language Search Capabilities
 
-Claude Code automatically searches and indexes your codebase. Use natural language to find what you need:
+Claude Code understands your codebase and delegates heavy exploration to its built-in **Explore subagent** — a fast, read-only agent that searches in its own context window and returns only the summary, so broad searches don't flood your main conversation. Just ask:
 
 ### Basic Searches
 ```
@@ -27,9 +27,9 @@ Claude Code automatically searches and indexes your codebase. Use natural langua
 > show me payment processing logic
 ```
 
-## 2. Optimize with CLAUDE.md Files
+## 2. Optimize with Memory Files
 
-Create `CLAUDE.md` files to provide search context and improve results:
+Give Claude search context up front. Run `/init` in a new repo to generate a starter `CLAUDE.md`, then refine it with `/memory`.
 
 ```markdown
 # Core Files
@@ -44,16 +44,22 @@ Create `CLAUDE.md` files to provide search context and improve results:
 - docker-compose up: Start local environment
 
 # Architecture Notes
-- Uses microservices pattern
-- PostgreSQL database with Redis caching
-- Event-driven architecture with message queues
-- JWT-based authentication
+- Microservices pattern, PostgreSQL with Redis caching
+- JWT-based authentication; tokens validated in middleware/auth.py
 
 # Search Aliases
-- "auth" refers to authentication system
+- "auth" refers to the authentication system in middleware/
 - "api" refers to REST endpoints in /api directory
-- "models" refers to data models in /models directory
 ```
+
+Beyond the basics:
+
+- **`@imports`** — pull other files into CLAUDE.md (`@docs/architecture.md`) instead of duplicating them
+- **`.claude/rules/`** — split instructions into topic files; add `paths:` frontmatter so a rule only loads when Claude touches matching files (e.g. `src/api/**/*.ts`)
+- **`AGENTS.md`** — if your repo already has one for other coding agents, put `@AGENTS.md` at the top of CLAUDE.md so both tools share one source
+- **Keep it under ~200 lines** — long memory files cost context every session and reduce adherence; move procedures into [skills](claude-skills-guide.md)
+
+See the [Memory Guide](claude-memory-guide.md) for the full system.
 
 ## 3. Effective Search Strategies
 
@@ -130,11 +136,17 @@ Create `CLAUDE.md` files to provide search context and improve results:
 
 ## 6. Custom Search Commands
 
-Create reusable search commands in `.claude/commands/` for frequent tasks:
+Create reusable search commands in `.claude/commands/` (or skills in `.claude/skills/`) for frequent tasks. Frontmatter pre-approves the read-only tools so the command runs without permission prompts:
 
 ### API Endpoint Finder
 **`.claude/commands/find-api.md`:**
 ```markdown
+---
+description: Find all API endpoints related to a keyword, with handlers, validation, and tests
+argument-hint: "<keyword>"
+allowed-tools: Read, Grep, Glob
+---
+
 Find all API endpoints related to: $ARGUMENTS
 
 1. Search for route definitions containing the keyword
@@ -145,26 +157,43 @@ Find all API endpoints related to: $ARGUMENTS
 6. Display example requests/responses if available
 ```
 
-**Usage:** `/project:find-api user management`
+**Usage:** `/find-api user management`
 
 ### Security Audit Command
 **`.claude/commands/security-audit.md`:**
 ```markdown
+---
+description: Security audit of a focus area — authn/authz, injection, secrets, session handling
+argument-hint: "<focus area>"
+allowed-tools: Read, Grep, Glob
+context: fork
+---
+
 Perform a security audit focusing on: $ARGUMENTS
 
 1. Find authentication and authorization code
 2. Locate input validation and sanitization
-3. Check for SQL injection vulnerabilities
+3. Check for injection vulnerabilities (SQL, command, template)
 4. Review error handling for information leakage
 5. Examine session management
 6. Look for hardcoded credentials or secrets
+
+Report by severity with file:line references. Do not modify files.
 ```
 
-**Usage:** `/project:security-audit authentication`
+**Usage:** `/security-audit authentication`
+
+Note: Claude Code bundles a `/security-review` skill that audits the current diff — use a custom command like this for broader, whole-area audits.
 
 ### Code Quality Review
 **`.claude/commands/code-quality.md`:**
 ```markdown
+---
+description: Review code quality of a module — duplication, complexity, naming, error handling
+argument-hint: "<module or path>"
+allowed-tools: Read, Grep, Glob
+---
+
 Review code quality for: $ARGUMENTS
 
 1. Find the specified files or modules
@@ -175,7 +204,7 @@ Review code quality for: $ARGUMENTS
 6. Suggest refactoring opportunities
 ```
 
-**Usage:** `/project:code-quality user service`
+**Usage:** `/code-quality user service`
 
 ## 7. Search Performance Tips
 
@@ -210,7 +239,7 @@ Review code quality for: $ARGUMENTS
 ## 8. Search Best Practices Checklist
 
 ### Before You Start
-- [ ] Create or update `CLAUDE.md` with project context
+- [ ] Run `/init` or update `CLAUDE.md` with project context
 - [ ] Understand the project's directory structure
 - [ ] Know the main technologies and frameworks used
 
@@ -293,7 +322,8 @@ Remember: Claude Code doesn't just search text—it understands code structure, 
 
 ## See Also
 
-- [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code/overview)
-- [Custom Commands Guide](claude-custom-commands.md)
-- [Common Workflows](https://docs.anthropic.com/en/docs/claude-code/common-workflows)
-- [Best Practices](https://www.anthropic.com/engineering/claude-code-best-practices)
+- [Custom Commands & Skills Guide](claude-custom-commands.md)
+- [Memory Guide](claude-memory-guide.md) — CLAUDE.md, rules, and auto memory
+- [Subagents Guide](claude-subagents-guide.md) — how Explore and custom agents search for you
+- [Claude Code Documentation](https://code.claude.com/docs/en/overview)
+- [Best Practices](https://code.claude.com/docs/en/best-practices)

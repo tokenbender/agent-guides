@@ -1,203 +1,99 @@
-Search across all your Claude Code conversation history for: $ARGUMENTS
+---
+description: Search across all Claude Code conversation history (session JSONL files) for a keyword or topic, and return resumable session IDs
+argument-hint: "<search term>"
+allowed-tools: Bash, Read, Grep
+---
 
-## Multi-Source Prompt Search
+# Search Prompts - Conversation History Search
 
-Search through your Claude Code conversation history using multiple methods to find relevant prompts, discussions, and insights.
+Search across all Claude Code conversation history for: **$ARGUMENTS**
 
-### Database Search (SQLite)
-First, search the main conversation database:
+## Where the history lives
+
+Claude Code stores every session as a JSONL transcript (one JSON event per line):
+
+```
+~/.claude/projects/<project-slug>/<session-id>.jsonl
+```
+
+- `<project-slug>` is the project path with `/` replaced by `-`
+- Events with `type: "user"` hold prompts, `type: "assistant"` holds responses, `type: "summary"` holds session summaries
+- Every event has `timestamp`, `sessionId`, `cwd`, and `uuid`
+
+Run the searches below with the Bash tool. Never interpolate the search term directly into SQL or unquoted shell — pass it via an environment variable or `jq --arg` to avoid quoting/injection bugs.
+
+## Step 1: Broad file scan
+
+Locate candidate transcripts with ripgrep:
 
 ```bash
-# Search user messages for keywords
-sqlite3 ~/.claude/__store.db "
-SELECT 
-    b.session_id,
-    datetime(b.timestamp, 'unixepoch') as date,
-    substr(u.message, 1, 100) as preview
-FROM user_messages u 
-JOIN base_messages b ON u.uuid = b.uuid 
-WHERE u.message LIKE '%$ARGUMENTS%' 
-ORDER BY b.timestamp DESC 
-LIMIT 10;"
+rg -l --no-ignore -g '*.jsonl' --sort modified "$TERM" ~/.claude/projects/
 ```
 
-### Project History Search (JSON)
-Search through project-specific conversation history:
+## Step 2: Structured search with jq
 
-```python
-import json
-import re
-from datetime import datetime
-
-def search_project_history(search_term):
-    try:
-        with open('/Users/YOUR_USERNAME/.claude.json', 'r') as f:
-            data = json.load(f)
-        
-        results = []
-        if 'projects' in data:
-            for project_path, project_data in data['projects'].items():
-                if 'history' in project_data:
-                    for i, item in enumerate(project_data['history']):
-                        text = ""
-                        if isinstance(item, dict) and 'display' in item:
-                            text = item['display']
-                        elif isinstance(item, str):
-                            text = item
-                        
-                        if search_term.lower() in text.lower():
-                            results.append({
-                                'project': project_path.split('/')[-1],
-                                'index': i,
-                                'text': text[:200] + "..." if len(text) > 200 else text,
-                                'relevance': text.lower().count(search_term.lower())
-                            })
-        
-        # Sort by relevance
-        results.sort(key=lambda x: x['relevance'], reverse=True)
-        return results[:15]  # Top 15 results
-    
-    except Exception as e:
-        return [{'error': f"Search failed: {e}"}]
-
-# Execute search
-results = search_project_history("$ARGUMENTS")
-for result in results:
-    if 'error' in result:
-        print(f"❌ {result['error']}")
-    else:
-        print(f"📁 Project: {result['project']}")
-        print(f"🔢 Relevance: {result['relevance']} matches")
-        print(f"💬 Text: {result['text']}")
-        print("---")
-```
-
-### Session-Based Search
-Find and resume specific conversation sessions:
+Pull matching user prompts with timestamps and session IDs:
 
 ```bash
-# Get recent sessions with context
-sqlite3 ~/.claude/__store.db "
-SELECT DISTINCT 
-    b.session_id,
-    datetime(MIN(b.timestamp), 'unixepoch') as start_date,
-    datetime(MAX(b.timestamp), 'unixepoch') as end_date,
-    COUNT(*) as message_count,
-    b.cwd as working_directory
-FROM base_messages b
-GROUP BY b.session_id 
-ORDER BY MAX(b.timestamp) DESC 
-LIMIT 10;"
+find ~/.claude/projects -name '*.jsonl' -exec cat {} + | \
+  jq -rs --arg term "$TERM" '
+    [.[] | select(.type == "user")
+        | select(.message.content | tostring | test($term; "i"))]
+    | sort_by(.timestamp) | reverse | .[:15][]
+    | "\(.timestamp)  session:\(.sessionId[:8])  \(.message.content | tostring | .[:160])"
+  '
 ```
 
-### Advanced Pattern Search
-Search for complex patterns and contexts:
+Also search assistant responses (solutions, explanations) the same way with `.type == "assistant"`.
 
-```python
-import re
-
-def advanced_prompt_search(pattern, context_words=5):
-    """
-    Search for regex patterns with surrounding context
-    """
-    # This would search through conversation files
-    # and return matches with surrounding context
-    
-    search_patterns = [
-        r'(?i)' + re.escape("$ARGUMENTS"),  # Case insensitive exact match
-        r'(?i).*' + re.escape("$ARGUMENTS") + r'.*',  # Contains term
-        r'(?i)\b' + re.escape("$ARGUMENTS") + r'\b',  # Whole word match
-    ]
-    
-    print(f"🔍 Searching for patterns related to: '$ARGUMENTS'")
-    print(f"📝 Including {context_words} words of context around matches")
-    
-    # Implementation would search through all conversation sources
-    return "Advanced search results would appear here"
-
-advanced_prompt_search("$ARGUMENTS")
-```
-
-### Conversation Summary Search
-Search through conversation summaries for high-level topics:
+## Step 3: Session summaries and recency
 
 ```bash
-# Search conversation summaries
-sqlite3 ~/.claude/__store.db "
-SELECT 
-    cs.summary,
-    datetime(cs.updated_at, 'unixepoch') as last_updated
-FROM conversation_summaries cs
-WHERE cs.summary LIKE '%$ARGUMENTS%'
-ORDER BY cs.updated_at DESC;"
+# Summaries matching the term
+find ~/.claude/projects -name '*.jsonl' | while read -r f; do
+  jq -rs --arg term "$TERM" '
+    [.[] | select(.type == "summary") | select(.summary | test($term; "i"))][0]
+    | "\(.sessionId)  \(.summary)"' "$f" 2>/dev/null
+done
+
+# Sessions active in the last 7 days
+find ~/.claude/projects -name '*.jsonl' -mtime -7
 ```
 
-### Temporal Search
-Find conversations from specific time periods:
+## Step 4: Prompt history in ~/.claude.json
+
+Recent prompt strings per project (fast, shallow):
 
 ```bash
-# Search conversations from last 7 days
-sqlite3 ~/.claude/__store.db "
-SELECT 
-    b.session_id,
-    datetime(b.timestamp, 'unixepoch') as date,
-    substr(u.message, 1, 150) as preview
-FROM user_messages u 
-JOIN base_messages b ON u.uuid = b.uuid 
-WHERE u.message LIKE '%$ARGUMENTS%' 
-AND b.timestamp > strftime('%s', 'now', '-7 days')
-ORDER BY b.timestamp DESC;"
+jq -r --arg term "$TERM" '
+  .projects | to_entries[] | .key as $p | .value.history[]?
+  | select(test($term; "i"))
+  | "\($p | split("/") | last): \(.)"' ~/.claude.json
 ```
 
-### Resume Relevant Sessions
-After finding relevant conversations, resume them:
+## Output format
 
-```bash
-# Resume a specific session (replace SESSION_ID)
-claude --resume SESSION_ID
-
-# Or use interactive session selector
-claude --resume
-```
-
-## Search Strategy
-
-1. **Start Broad**: Use general keywords related to your topic
-2. **Narrow Down**: Add specific terms or use regex patterns  
-3. **Time Context**: Filter by recent conversations if looking for current projects
-4. **Project Context**: Focus on specific project histories if relevant
-5. **Session Resume**: Use session IDs to continue relevant conversations
-
-## Output Format
+Present results as:
 
 ```
-🔍 PROMPT SEARCH RESULTS for: "$ARGUMENTS"
+🔍 SEARCH RESULTS for: "$ARGUMENTS"
 
-📊 SUMMARY
-- Database matches: X results
-- Project history matches: Y results  
-- Session matches: Z sessions
+🎯 TOP MATCHES (newest first)
+- 2026-07-14  session:9f3a1c2e  "how do I fix the memory leak in..."
+  project: my-ml-project
 
-🎯 TOP MATCHES
-[Ranked list of most relevant conversations]
+📋 MATCHING SESSION SUMMARIES
+- 9f3a1c2e-...  "Debugging GPU OOM in training loop"
 
-📅 RECENT DISCUSSIONS
-[Time-ordered recent mentions]
+▶️ RESUME WITH
+  claude --resume 9f3a1c2e-...
 
-🔗 RESUMABLE SESSIONS
-- Session ID: abc123 | Date: 2024-01-15 | Context: "Working on ML pipeline"
-- Use: claude --resume abc123
-
-💡 RELATED TOPICS
-[Automatically detected related search terms]
+💡 SUGGESTED FOLLOW-UPS
+- related terms worth searching next
 ```
 
-## Usage Tips
+## Notes
 
-- Use **quotation marks** for exact phrase searches
-- Try **variations** of your search terms (plurals, synonyms)
-- Search for **project names** to find all related conversations
-- Use **technical terms** that are unique to your domain
-- Combine with **time filters** for recent vs. historical discussions
-
-Execute comprehensive prompt search starting with database query, then expanding to project histories and conversation summaries.
+- The built-in `/resume` picker covers simple cases natively — mention it when the user just wants to reopen a recent session.
+- To export a found session as markdown, use `scripts/extract-claude-session.py --session-id <id>` from the agent-guides repo.
+- Content fields can be strings or lists of blocks; always pipe through `tostring` before matching.

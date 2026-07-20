@@ -1,84 +1,72 @@
 # Agent Guides
 
-Comprehensive guides and tools for Claude Code workflows, custom commands, and AI-assisted development.
+Guides and production-ready commands for Claude Code: skills, subagents, hooks, memory, custom commands, and conversation-history tooling. Current as of July 2026 (skills-merged commands, native subagents, hooks, Agent Skills open standard).
 
-## Contents
+## 📚 Guides
 
-### 📚 Guides
-- [Claude Code Custom Commands Guide](claude-custom-commands.md) - Complete guide to creating and using custom slash commands
-- [Claude Code Search Best Practices](claude-code-search-best-practices.md) - Comprehensive guide to effective searching in Claude Code
-- [Claude Conversation Search Guide](claude-conversation-search-guide.md) - Complete guide to searching your conversation history
+| Guide | What it covers |
+|-------|----------------|
+| [Agent Skills Guide](claude-skills-guide.md) | The 2026 extension primitive: SKILL.md, frontmatter, dynamic context injection, subagent execution, distribution |
+| [Custom Commands & Skills](claude-custom-commands.md) | Quick-start for `/commands` — arguments, frontmatter, built-ins |
+| [Subagents Guide](claude-subagents-guide.md) | `.claude/agents/`, worktree isolation, background execution, orchestration patterns |
+| [Hooks Guide](claude-hooks-guide.md) | Deterministic automation: events, matchers, decision JSON, recipes |
+| [Memory Guide](claude-memory-guide.md) | CLAUDE.md, `.claude/rules/`, auto memory, AGENTS.md interop |
+| [Search Best Practices](claude-code-search-best-practices.md) | Finding things in your codebase with natural language |
+| [Conversation Search Guide](claude-conversation-search-guide.md) | Searching your session history (JSONL storage, `/resume`, jq recipes) |
 
-### 🛠️ Ready-to-Use Tools
-- [Claude Code Commands Collection](claude-commands/) - Production-ready custom commands including:
-  - **Conversation Search**: Multi-source search across all your Claude conversation history
-  - **Multi-Mind Analysis**: Collaborative multi-specialist analysis with dynamic role assignment
-  - **Function Deep Dive**: Line-by-line code analysis with performance insights
-  - **Anti-Repetition Workflows**: Progressive knowledge building across multiple rounds
+**Which one do I need?** Facts → [memory](claude-memory-guide.md). Procedures → [skills](claude-skills-guide.md). Isolated/parallel work → [subagents](claude-subagents-guide.md). Guaranteed enforcement → [hooks](claude-hooks-guide.md). External systems → MCP.
+
+## 🛠️ Ready-to-Use Commands
+
+The [claude-commands/](claude-commands/) collection — every command ships with modern frontmatter (tool pre-approval, argument hints, invocation control):
+
+| Command | Purpose |
+|---------|---------|
+| `/search-prompts` | Full-text search across all conversation history, with resumable session IDs |
+| `/analyze-function` | Line-by-line function deep dive with performance and edge-case analysis |
+| `/multi-mind` | Multi-specialist analysis fanned out to parallel subagents with cross-pollination rounds |
+| `/page` | Save full session history with citations, then hand off to `/compact` |
+| `/crud-claude-commands` | Create/read/update/delete your command & skill collection |
 
 ## Quick Start
 
-### Install Custom Commands
-
-**For specific projects:**
 ```bash
-# Copy to your project
+# Install as skills (recommended)
+mkdir -p .claude/skills
+for f in claude-commands/*.md; do
+  name=$(basename "$f" .md)
+  mkdir -p ".claude/skills/$name"
+  cp "$f" ".claude/skills/$name/SKILL.md"
+done
+
+# Or as flat commands
 mkdir -p .claude/commands
 cp claude-commands/*.md .claude/commands/
+
+# Personal (all projects): use ~/.claude/ instead of .claude/
 ```
 
-**For global use:**
-```bash
-# Copy to global Claude directory
-mkdir -p ~/.claude/commands  
-cp claude-commands/*.md ~/.claude/commands/
+Then in any Claude Code session:
+
+```
+/multi-mind "Should we adopt CRDTs for our collaborative editor?" rounds=5
+/search-prompts "database optimization"
+/analyze-function train.py:detect_words_gpu
+/page feature-work
 ```
 
-### Featured Commands
+New project? Start with `/init` (set `CLAUDE_CODE_NEW_INIT=1` for the interactive flow), then `/doctor` to audit your setup.
 
-#### Multi-Mind Collaborative Analysis
-```bash
-# Basic multi-specialist analysis (3 rounds)
-/project:multi-mind "Should we implement quantum error correction in our ML pipeline?"
+## 🔧 Scripts
 
-# Extended analysis with custom rounds
-/project:multi-mind "Climate change mitigation strategies" rounds=5
-
-# Structured expert debate format
-/project:multi-mind-debate "Scaling transformer architectures beyond GPU limits"
-```
-
-#### Conversation History Search
-```bash
-# Search across all your Claude conversations
-/project:search-prompts "machine learning pipeline"
-/project:search-prompts "debugging memory issues"
-/project:search-prompts "database optimization"
-```
-
-#### Deep Code Analysis
-```bash
-# Analyze any function with detailed insights
-/project:analyze-function train.py:detect_words_gpu
-/project:analyze-function utils.js validateInput
-```
-
-## Key Features
-
-- **Dynamic Specialist Assignment**: AI automatically selects 4-6 experts based on topic complexity
-- **Error Decorrelation**: Different specialists catch different types of blind spots
-- **Web Search Integration**: Fresh knowledge acquisition each round
-- **Anti-Repetition Mechanisms**: Progressive insight building without circular discussions
-- **Configurable Workflows**: Adjust rounds and depth based on needs
+- [`extract-claude-session.py`](scripts/extract-claude-session.py) — export any session from `~/.claude/projects/` JSONL transcripts to markdown or cleaned JSONL. Powers the `/page` command.
 
 ## Contributing
 
-Feel free to:
-- Add new custom commands
+- Add new commands/skills (use the [template](claude-commands/README.md#writing-your-own))
 - Improve existing guides
-- Share your own Claude Code workflows
-- Submit pull requests with enhancements
+- Share workflows via pull request
 
 ## License
 
-Open source - modify and adapt for your specific needs.
+Open source — modify and adapt for your needs. See [LICENSE](LICENSE).
