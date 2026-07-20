@@ -16,54 +16,39 @@ Guides and production-ready commands for Claude Code: skills, subagents, hooks, 
 
 **Which one do I need?** Facts → [memory](claude-memory-guide.md). Procedures → [skills](claude-skills-guide.md). Isolated/parallel work → [subagents](claude-subagents-guide.md). Guaranteed enforcement → [hooks](claude-hooks-guide.md). External systems → MCP.
 
-## 🛠️ Ready-to-Use Commands
+## 🛠️ Ready-to-Use Skill
 
-The [claude-commands/](claude-commands/) collection — every command ships with modern frontmatter (tool pre-approval, argument hints, invocation control):
+The [claude-skills/](claude-skills/) collection:
 
-| Command | Purpose |
-|---------|---------|
-| `/search-prompts` | Full-text search across all conversation history, with resumable session IDs |
-| `/analyze-function` | Line-by-line function deep dive with performance and edge-case analysis |
-| `/multi-mind` | Multi-specialist analysis fanned out to parallel subagents with cross-pollination rounds |
-| `/page` | Save full session history with citations, then hand off to `/compact` |
-| `/crud-claude-commands` | Create/read/update/delete your command & skill collection |
+| Skill | Purpose |
+|-------|---------|
+| `/multi-mind` | Multi-specialist judgment analysis fanned out to parallel subagents, with adversarial cross-pollination rounds — for tradeoff/strategy questions where `/deep-research` (fact-finding) isn't the right tool |
 
 ## Quick Start
 
 ```bash
-# Install as skills (recommended)
+# Install the skill (project)
 mkdir -p .claude/skills
-for f in claude-commands/*.md; do
-  name=$(basename "$f" .md)
-  mkdir -p ".claude/skills/$name"
-  cp "$f" ".claude/skills/$name/SKILL.md"
-done
+cp -r claude-skills/multi-mind .claude/skills/
 
-# Or as flat commands
-mkdir -p .claude/commands
-cp claude-commands/*.md .claude/commands/
-
-# Personal (all projects): use ~/.claude/ instead of .claude/
+# Personal (all projects): use ~/.claude/skills/ instead
 ```
 
 Then in any Claude Code session:
 
 ```
 /multi-mind "Should we adopt CRDTs for our collaborative editor?" rounds=5
-/search-prompts "database optimization"
-/analyze-function train.py:detect_words_gpu
-/page feature-work
 ```
 
 New project? Start with `/init` (set `CLAUDE_CODE_NEW_INIT=1` for the interactive flow), then `/doctor` to audit your setup.
 
 ## 🔧 Scripts
 
-- [`extract-claude-session.py`](scripts/extract-claude-session.py) — export any session from `~/.claude/projects/` JSONL transcripts to markdown or cleaned JSONL. Powers the `/page` command.
+- [`extract-claude-session.py`](scripts/extract-claude-session.py) — export any session from `~/.claude/projects/` JSONL transcripts to markdown or cleaned JSONL.
 
 ## Contributing
 
-- Add new commands/skills (use the [template](claude-commands/README.md#writing-your-own))
+- Add new skills (see the [Skills Guide](claude-skills-guide.md) for the format)
 - Improve existing guides
 - Share workflows via pull request
 

@@ -144,25 +144,28 @@ Bundled **skills** (prompt-based, overridable by your own same-name skill): `/co
 
 ## Examples
 
-### Code review with scoped tools
+### Release notes from live git state
 
 ```yaml
 ---
-description: Review changed code for quality, security, and performance issues
-argument-hint: "[file-or-directory]"
-allowed-tools: Read, Grep, Glob, Bash
-context: fork
+description: Draft release notes from commits since the last tag. Use when preparing a release or changelog.
+argument-hint: "[since-tag]"
+allowed-tools: Bash
 ---
 
-Review $ARGUMENTS for:
-- Correctness bugs and edge cases
-- Security vulnerabilities (injection, secrets, authz gaps)
-- Performance problems (N+1, unbounded loops, allocations in hot paths)
+## Commits since last release
 
-!`git diff --stat HEAD~1`
+!`git log --oneline $(git describe --tags --abbrev=0 2>/dev/null || echo HEAD~20)..HEAD`
 
-Report findings by severity with file:line references. Do not modify files.
+## Changed files
+
+!`git diff --stat $(git describe --tags --abbrev=0 2>/dev/null || echo HEAD~20)..HEAD | tail -5`
+
+Group the commits above into Features / Fixes / Internal. Write user-facing
+release notes: one line per item, no commit hashes, flag breaking changes.
 ```
+
+This pattern — `` !`injection` `` grounding the prompt in live repo state — is what makes skills beat pasted prompts. (For diff review, use the bundled `/code-review` instead of writing your own.)
 
 ### Bug triage
 
@@ -187,5 +190,5 @@ Bug: $ARGUMENTS
 - [Agent Skills Guide](claude-skills-guide.md) — skills in depth: supporting files, subagent execution, distribution
 - [Subagents Guide](claude-subagents-guide.md) — `context: fork` and `.claude/agents/`
 - [Hooks Guide](claude-hooks-guide.md) — deterministic automation around the agent loop
-- [Commands Collection](claude-commands/) — ready-to-use commands from this repo
+- [Skills Collection](claude-skills/) — ready-to-use skills from this repo
 - [Claude Code docs: skills](https://code.claude.com/docs/en/skills) · [commands reference](https://code.claude.com/docs/en/commands)

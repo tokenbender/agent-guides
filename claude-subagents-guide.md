@@ -104,7 +104,7 @@ The subagent accumulates learnings across sessions (per repository, shared acros
 
 ## Orchestration Patterns
 
-**Fan-out research** — launch N read-only subagents in one message, each on a different question; synthesize their summaries. (This repo's [`multi-mind`](claude-commands/multi-mind.md) command is a worked example.)
+**Fan-out research** — launch N read-only subagents in one message, each on a different question; synthesize their summaries. (This repo's [`multi-mind`](claude-skills/multi-mind/SKILL.md) skill is a worked example.)
 
 **Pipeline** — explorer → implementer → reviewer, passing each stage's output to the next. Keep each stage's context clean.
 
@@ -126,5 +126,5 @@ For many independent *sessions* monitored from one place, see background agents 
 
 - [Skills Guide](claude-skills-guide.md) — `context: fork`, preloading skills
 - [Hooks Guide](claude-hooks-guide.md) — `SubagentStart/Stop` events
-- [`multi-mind` command](claude-commands/multi-mind.md) — multi-specialist orchestration
+- [`multi-mind` skill](claude-skills/multi-mind/SKILL.md) — multi-specialist orchestration
 - [Claude Code docs: subagents](https://code.claude.com/docs/en/sub-agents)

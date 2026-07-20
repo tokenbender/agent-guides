@@ -136,34 +136,13 @@ See the [Memory Guide](claude-memory-guide.md) for the full system.
 
 ## 6. Custom Search Commands
 
-Create reusable search commands in `.claude/commands/` (or skills in `.claude/skills/`) for frequent tasks. Frontmatter pre-approves the read-only tools so the command runs without permission prompts:
+Before writing one, check the built-ins: the Explore subagent handles most natural-language code search, and bundled skills cover diff-focused audits (`/code-review`, `/security-review`). Custom commands earn their place for searches the built-ins don't do — like **whole-area** audits (bundled skills review the current diff only). Create them in `.claude/commands/` (or skills in `.claude/skills/`) with frontmatter that pre-approves read-only tools:
 
-### API Endpoint Finder
-**`.claude/commands/find-api.md`:**
+### Whole-Area Security Audit
+**`.claude/skills/security-audit/SKILL.md`:**
 ```markdown
 ---
-description: Find all API endpoints related to a keyword, with handlers, validation, and tests
-argument-hint: "<keyword>"
-allowed-tools: Read, Grep, Glob
----
-
-Find all API endpoints related to: $ARGUMENTS
-
-1. Search for route definitions containing the keyword
-2. Find corresponding controllers and handlers
-3. Locate validation middleware and schemas
-4. Show authentication/authorization requirements
-5. List any tests for these endpoints
-6. Display example requests/responses if available
-```
-
-**Usage:** `/find-api user management`
-
-### Security Audit Command
-**`.claude/commands/security-audit.md`:**
-```markdown
----
-description: Security audit of a focus area — authn/authz, injection, secrets, session handling
+description: Whole-area security audit — authn/authz, injection, secrets, session handling across an entire subsystem (not just the diff)
 argument-hint: "<focus area>"
 allowed-tools: Read, Grep, Glob
 context: fork
@@ -182,29 +161,6 @@ Report by severity with file:line references. Do not modify files.
 ```
 
 **Usage:** `/security-audit authentication`
-
-Note: Claude Code bundles a `/security-review` skill that audits the current diff — use a custom command like this for broader, whole-area audits.
-
-### Code Quality Review
-**`.claude/commands/code-quality.md`:**
-```markdown
----
-description: Review code quality of a module — duplication, complexity, naming, error handling
-argument-hint: "<module or path>"
-allowed-tools: Read, Grep, Glob
----
-
-Review code quality for: $ARGUMENTS
-
-1. Find the specified files or modules
-2. Check for code duplication
-3. Analyze complexity and readability
-4. Review naming conventions
-5. Check for proper error handling
-6. Suggest refactoring opportunities
-```
-
-**Usage:** `/code-quality user service`
 
 ## 7. Search Performance Tips
 

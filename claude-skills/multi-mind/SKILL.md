@@ -17,6 +17,8 @@ Parse an optional `rounds=N` parameter (default 3).
 - Subagents run in the background by default; launch all specialists for a round in a single message so they execute in parallel.
 - If the question needs codebase-wide changes (not just analysis), the bundled `/batch` skill is a better fit. For long-running collaborative sessions, see agent teams in the Claude Code docs.
 
+**When to use this vs. `/deep-research`:** the bundled `/deep-research` workflow fans out web searches and synthesizes a cited report — use it for factual questions. Use multi-mind for *judgment* questions (architecture tradeoffs, strategy, design decisions) where decorrelated expert perspectives and adversarial cross-pollination matter more than citation coverage.
+
 ## Phase 1: Specialist Assignment & Research
 
 Analyze the topic and determine 4-6 specialist roles with maximally decorrelated perspectives. Then launch them all in parallel, e.g.:

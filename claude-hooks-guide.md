@@ -156,8 +156,6 @@ PostToolUse stdout is shown to Claude, so lint errors feed straight back into th
 }
 ```
 
-(Or use the [`page`](claude-commands/page.md) command proactively instead.)
-
 ### 5. Skill-scoped hook
 
 Hooks in skill frontmatter run only while that skill is active — e.g. force a test run after every edit *during a TDD skill*:

@@ -121,13 +121,9 @@ python3 scripts/extract-claude-session.py --session-id <session-id> --format mar
 
 The script walks the same JSONL files, formats messages with timestamps and tool calls, and exports markdown or cleaned JSONL. See [`scripts/extract-claude-session.py`](scripts/extract-claude-session.py).
 
-## As a Custom Command
+## As a Skill
 
-The [`search-prompts`](claude-commands/search-prompts.md) command packages these searches so Claude runs them for you:
-
-```
-/search-prompts "machine learning pipeline"
-```
+Wrap the recipes above into a skill (`.claude/skills/history-search/SKILL.md`) and Claude will run them for you on request — see the [Skills Guide](claude-skills-guide.md) for the format. For most "reopen that conversation" needs, just use the built-in `/resume` picker.
 
 ## Shell Helpers
 
@@ -170,6 +166,5 @@ claude-sessions() {
 ## See Also
 
 - [Claude Code Search Best Practices](claude-code-search-best-practices.md) — searching *code* with Claude, not history
-- [`search-prompts` command](claude-commands/search-prompts.md) — packaged version of these searches
 - [`extract-claude-session.py`](scripts/extract-claude-session.py) — full session export
 - [Claude Code docs: checkpointing & rewind](https://code.claude.com/docs/en/checkpointing)
