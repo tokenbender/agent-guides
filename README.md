@@ -18,7 +18,7 @@ Guides and production-ready commands for Claude Code: skills, subagents, hooks, 
 
 ## 🛠️ Skills Collection
 
-[claude-skills/](claude-skills/) — 11 installable skills in standard `SKILL.md` layout: multi-mind orchestration, SFT data auditing, experiment ops (tokenbending/worklog), paper OCR pipelines, writing workflows, Playwright/Manim/X tooling. See the [collection README](claude-skills/README.md) for the full table.
+[claude-skills/](claude-skills/) — 12 installable skills in standard `SKILL.md` layout: multi-mind orchestration, capability/time-horizon estimation, SFT data auditing, experiment ops (tokenbending/worklog), paper OCR pipelines, writing workflows, Playwright/Manim/X tooling. See the [collection README](claude-skills/README.md) for the full table.
 
 ## Quick Start
 
