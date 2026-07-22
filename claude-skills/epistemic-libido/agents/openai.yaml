@@ -1,0 +1,4 @@
+interface:
+  display_name: "Epistemic Libido"
+  short_description: "Rank ideas by surprise, mechanism, and alpha"
+  default_prompt: "Use $epistemic-libido to filter and rank these ideas for high-entropy mechanistic alpha."

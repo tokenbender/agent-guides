@@ -24,6 +24,7 @@ Skill directories are watched live — files take effect in a running session wi
 | Skill | Purpose |
 |-------|---------|
 | `/multi-mind` | Multi-specialist judgment analysis via parallel subagents — for tradeoff/strategy questions where `/deep-research` (fact-finding) isn't the right tool |
+| `epistemic-libido` | Filter and rank ideas for high-entropy mechanistic insight, underpriced leverage, and evidence-backed nerdsniping |
 | `capability-horizon-estimator` | Estimate whether a model can complete a task and how long it takes — METR time-horizon model, benchmark anchors, best-of-N and wall-clock calculator |
 | `audit-sft-data-quality` | Audit SFT datasets against the behavior they teach: contracts, hard gates, duplicates, contamination, train/review/reject dispositions |
 
