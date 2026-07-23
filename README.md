@@ -1,53 +1,64 @@
 # Agent Guides
 
-Guides and production-ready commands for Claude Code: skills, subagents, hooks, memory, custom commands, and conversation-history tooling. Current as of July 2026 (skills-merged commands, native subagents, hooks, Agent Skills open standard).
+Field guides and a production skill collection for Claude Code, current with the July 2026 ecosystem: commands merged into skills, native subagents with worktree isolation, lifecycle hooks, path-scoped memory, and the Agent Skills open standard.
+
+> The repo tracks the ecosystem as it moves. Last full audit: July 2026 against `code.claude.com/docs` and METR's published time-horizon data.
 
 ## 📚 Guides
 
 | Guide | What it covers |
 |-------|----------------|
-| [Agent Skills Guide](claude-skills-guide.md) | The 2026 extension primitive: SKILL.md, frontmatter, dynamic context injection, subagent execution, distribution |
-| [Custom Commands & Skills](claude-custom-commands.md) | Quick-start for `/commands` — arguments, frontmatter, built-ins |
-| [Subagents Guide](claude-subagents-guide.md) | `.claude/agents/`, worktree isolation, background execution, orchestration patterns |
-| [Hooks Guide](claude-hooks-guide.md) | Deterministic automation: events, matchers, decision JSON, recipes |
-| [Memory Guide](claude-memory-guide.md) | CLAUDE.md, `.claude/rules/`, auto memory, AGENTS.md interop |
-| [Search Best Practices](claude-code-search-best-practices.md) | Finding things in your codebase with natural language |
-| [Conversation Search Guide](claude-conversation-search-guide.md) | Searching your session history (JSONL storage, `/resume`, jq recipes) |
+| [Agent Skills](claude-skills-guide.md) | SKILL.md anatomy, full frontmatter, dynamic context injection, `context: fork` subagent execution, precedence, distribution |
+| [Custom Commands](claude-custom-commands.md) | `/commands` quick start: arguments, frontmatter, built-in command map |
+| [Subagents](claude-subagents-guide.md) | `.claude/agents/`, background-by-default execution, worktree isolation, persistent memory, orchestration patterns |
+| [Hooks](claude-hooks-guide.md) | Deterministic guardrails: event table, matchers, decision JSON, five production recipes |
+| [Memory](claude-memory-guide.md) | CLAUDE.md, `.claude/rules/` path scoping, auto memory, AGENTS.md interop, what-goes-where table |
+| [Code Search](claude-code-search-best-practices.md) | Natural-language codebase search, memory files that improve it, custom search skills |
+| [Conversation Search](claude-conversation-search-guide.md) | Session history: JSONL storage format, `/resume` picker, jq/rg power recipes |
 
-**Which one do I need?** Facts → [memory](claude-memory-guide.md). Procedures → [skills](claude-skills-guide.md). Isolated/parallel work → [subagents](claude-subagents-guide.md). Guaranteed enforcement → [hooks](claude-hooks-guide.md). External systems → MCP.
+**Which surface when:** facts → [memory](claude-memory-guide.md) · procedures → [skills](claude-skills-guide.md) · isolated or parallel work → [subagents](claude-subagents-guide.md) · hard enforcement → [hooks](claude-hooks-guide.md) · external systems → MCP.
 
 ## 🛠️ Skills Collection
 
-[claude-skills/](claude-skills/) — 13 installable skills in standard `SKILL.md` layout: multi-mind orchestration, epistemic-alpha filtering, capability/time-horizon estimation, SFT data auditing, experiment ops (tokenbending/worklog), paper OCR pipelines, writing workflows, and Playwright/Manim/X tooling. See the [collection README](claude-skills/README.md) for the full table.
-
-## Quick Start
+[claude-skills/](claude-skills/) — 13 skills in standard `SKILL.md` layout, dependencies (references, templates, scripts) included. Install one or all:
 
 ```bash
-# Install one skill
-cp -r claude-skills/multi-mind ~/.claude/skills/
-
-# Or the whole collection
-cp -R claude-skills/*/ ~/.claude/skills/
+cp -r claude-skills/multi-mind ~/.claude/skills/   # one
+cp -R claude-skills/*/ ~/.claude/skills/           # all
 ```
 
-Then in any Claude Code session:
+| Skill | What it does |
+|-------|--------------|
+| [multi-mind](claude-skills/multi-mind/) | Fans judgment questions out to 4-6 decorrelated specialist subagents with adversarial cross-pollination rounds |
+| [capability-horizon-estimator](claude-skills/capability-horizon-estimator/) | Answers "can the model do this, and how long will it take" with METR time-horizon math: logistic success curve, doubling-rate extrapolation, best-of-N, wall-clock calculator |
+| [epistemic-libido](claude-skills/epistemic-libido/) | Filters and ranks papers, posts, and ideas for high-entropy mechanistic insight and underpriced leverage — separates fertile results from hype |
+| [audit-sft-data-quality](claude-skills/audit-sft-data-quality/) | Audits SFT datasets against the behavior they teach: contracts, contamination, lineage, train/review/reject dispositions |
+| [tokenbending](claude-skills/tokenbending/) | Experiment discipline: deterministic contract vs fuzzy choices, preserve-before-delete, stop-on-first-failure |
+| [worklog](claude-skills/worklog/) | Issue-led atomic work journal: one issue per unit, comment ledger, closeout checklist |
+| [paper-ocr-notes-pipeline](claude-skills/paper-ocr-notes-pipeline/) | Paper PDF/URL → grounded OCR + teachable notes.md, with identity gate and revision passes |
+| [pdf-ocr-feedback](claude-skills/pdf-ocr-feedback/) | High-accuracy OCR via self-scoring rubric and Maj@K consensus voting |
+| [technical-writing-workflow](claude-skills/technical-writing-workflow/) | Full technical writing pipeline: ontology tables, outline contracts, rigor and anti-slop passes, audit scripts |
+| [blade-and-contract](claude-skills/blade-and-contract/) | Provocative but defensible rhetoric: lead with the blade, anchor with the contract |
+| [playwright](claude-skills/playwright/) | Browser automation from the terminal via playwright-cli, wrapper script included |
+| [manim-math-explainer](claude-skills/manim-math-explainer/) | Manim Community math scenes: style rules, templates, render loop |
+| [x-thread-reader](claude-skills/x-thread-reader/) | Full X/Twitter threads through twitter-thread.com with fallbacks |
 
-```
-/multi-mind "Should we adopt CRDTs for our collaborative editor?" rounds=5
-```
+### Try the newest one
 
-New project? Start with `/init` (set `CLAUDE_CODE_NEW_INIT=1` for the interactive flow), then `/doctor` to audit your setup.
+```bash
+# Can a 12-hour-horizon model do a 4-hour task? 
+python3 claude-skills/capability-horizon-estimator/scripts/estimate.py --h50 719 --task-min 240
+# SINGLE ATTEMPT: 70.6%  VERDICT: LIKELY  WALL-CLOCK EST: ~48 min
+```
 
 ## 🔧 Scripts
 
-- [`extract-claude-session.py`](scripts/extract-claude-session.py) — export any session from `~/.claude/projects/` JSONL transcripts to markdown or cleaned JSONL.
+- [`extract-claude-session.py`](scripts/extract-claude-session.py) — exports any session from `~/.claude/projects/` JSONL transcripts to markdown or cleaned JSONL.
 
 ## Contributing
 
-- Add new skills (see the [Skills Guide](claude-skills-guide.md) for the format)
-- Improve existing guides
-- Share workflows via pull request
+Add a skill (format: [Agent Skills guide](claude-skills-guide.md)), fix a fact, or open a PR with a workflow worth sharing.
 
 ## License
 
-Open source — modify and adapt for your needs. See [LICENSE](LICENSE).
+See [LICENSE](LICENSE).
