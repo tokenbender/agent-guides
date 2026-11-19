@@ -20,7 +20,7 @@ Field guides and a production skill collection for Claude Code, current with the
 
 ## 🛠️ Skills Collection
 
-[claude-skills/](claude-skills/) — 13 skills in standard `SKILL.md` layout, dependencies (references, templates, scripts) included. Install one or all:
+[claude-skills/](claude-skills/) — 16 skills in standard `SKILL.md` layout, dependencies (references, templates, scripts) included. Install one or all:
 
 ```bash
 cp -r claude-skills/multi-mind ~/.claude/skills/   # one
@@ -33,8 +33,10 @@ cp -R claude-skills/*/ ~/.claude/skills/           # all
 | [capability-horizon-estimator](claude-skills/capability-horizon-estimator/) | Answers "can the model do this, and how long will it take" with METR time-horizon math: logistic success curve, doubling-rate extrapolation, best-of-N, wall-clock calculator |
 | [epistemic-libido](claude-skills/epistemic-libido/) | Filters and ranks papers, posts, and ideas for high-entropy mechanistic insight and underpriced leverage — separates fertile results from hype |
 | [audit-sft-data-quality](claude-skills/audit-sft-data-quality/) | Audits SFT datasets against the behavior they teach: contracts, contamination, lineage, train/review/reject dispositions |
-| [tokenbending](claude-skills/tokenbending/) | Experiment discipline: deterministic contract vs fuzzy choices, preserve-before-delete, stop-on-first-failure |
-| [worklog](claude-skills/worklog/) | Issue-led atomic work journal: one issue per unit, comment ledger, closeout checklist |
+| [tokenbending-preflight](claude-skills/tokenbending-preflight/) | Zero-dollar line-by-line spec-vs-code audit (`1–10` score, `file:line` blindspots, real-artifact verification) |
+| [tokenbending-experimenting](claude-skills/tokenbending-experimenting/) | Trust-region & causal-delta operating rules, real-artifact & control checks, preemption-safe sync, clarify-before-spend gate |
+| [tokenbending-worklog](claude-skills/tokenbending-worklog/) | Issue-led atomic work journal: master/child GitHub issues, atomic commits, residual-work audit, linked journal sync |
+| [tokenbending-etl](claude-skills/tokenbending-etl/) | Executive Tech Lead update: verdict + unit economics, measured bottleneck table, ROI-ranked action plan |
 | [paper-ocr-notes-pipeline](claude-skills/paper-ocr-notes-pipeline/) | Paper PDF/URL → grounded OCR + teachable notes.md, with identity gate and revision passes |
 | [pdf-ocr-feedback](claude-skills/pdf-ocr-feedback/) | High-accuracy OCR via self-scoring rubric and Maj@K consensus voting |
 | [technical-writing-workflow](claude-skills/technical-writing-workflow/) | Full technical writing pipeline: ontology tables, outline contracts, rigor and anti-slop passes, audit scripts |
@@ -42,6 +44,7 @@ cp -R claude-skills/*/ ~/.claude/skills/           # all
 | [playwright](claude-skills/playwright/) | Browser automation from the terminal via playwright-cli, wrapper script included |
 | [manim-math-explainer](claude-skills/manim-math-explainer/) | Manim Community math scenes: style rules, templates, render loop |
 | [x-thread-reader](claude-skills/x-thread-reader/) | Full X/Twitter threads through twitter-thread.com with fallbacks |
+| [molab-gpu](claude-skills/molab-gpu/) | Run experiments in a live Molab GPU notebook through the official marimo pair CLI; shared with Codex, Claude Code, and Grok Bot |
 
 ### Try the newest one
 

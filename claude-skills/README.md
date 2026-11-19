@@ -18,6 +18,15 @@ cp -R claude-skills/*/ ~/.claude/skills/
 
 Skill directories are watched live — files take effect in a running session within seconds (a newly created top-level `skills/` directory needs a restart).
 
+`molab-gpu` is maintained here as a portable, single-file skill. On this Mac,
+`~/.agents/skills/molab-gpu`, `~/.codex/skills/molab-gpu`, and
+`~/.claude/skills/molab-gpu` link to that source directory. Grok Bot has a copy in
+its shared cloud library. The existing Grok Bot CLI's `skills add` imports a new
+entry rather than updating one. After saving the source, remove only the previous
+`molab-gpu` library entry by its exact ID, import the source again, and verify
+there is exactly one matching skill. Cloud updates are explicit; no background
+synchronizer is installed.
+
 ## Available Skills
 
 ### Orchestration \u0026 analysis
@@ -31,8 +40,10 @@ Skill directories are watched live — files take effect in a running session wi
 ### Research & experiment operations
 | Skill | Purpose |
 |-------|---------|
-| `tokenbending` | Experiment discipline: deterministic contract vs fuzzy choices, preserve-before-delete, stop-on-first-substantive-failure |
-| `worklog` | Issue-led atomic work logging: one issue per unit of work, comment journal, closeout checklist |
+| `tokenbending-preflight` | Zero-dollar line-by-line spec-vs-code audit (`1–10` score, `file:line` blindspots, real-artifact verification) |
+| `tokenbending-experimenting` | Trust-region & causal-delta operating rules, real-artifact & control checks, preemption-safe sync, clarify-before-spend gate |
+| `tokenbending-worklog` | Issue-led atomic work logging: master/child GitHub issues, atomic commits, residual-work audit, linked journal sync |
+| `tokenbending-etl` | Executive Tech Lead update: verdict + unit economics, measured stage-by-stage bottleneck table, ROI-ranked action plan |
 
 ### Documents & OCR
 | Skill | Purpose |
@@ -52,6 +63,7 @@ Skill directories are watched live — files take effect in a running session wi
 | `playwright` | Browser automation from the terminal via `playwright-cli` (includes wrapper script + command reference) |
 | `manim-math-explainer` | Manim Community math explainer scenes: style rules, templates, render loop |
 | `x-thread-reader` | Full X/Twitter threads via twitter-thread.com mirror + fallbacks |
+| `molab-gpu` | Run experiments on Molab's remote GPU through marimo pair; portable across Codex, Claude Code, and Grok Bot |
 
 ## Writing Your Own
 
