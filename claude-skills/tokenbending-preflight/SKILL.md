@@ -31,6 +31,6 @@ List every blindspot with **exact `file:line` references**, stating:
 2. **The fix:** The smallest clean engineering change that eliminates the failure mode without breaking backward compatibility on saved receipts.
 
 ### 4. Lock the Spec & Exhaust \$0 Real-Artifact Proof First
-- Wait for user alignment before editing implementation files or spending compute (unless pre-authorized).
+- Always present preflight design forks and sign-off choices via the interactive questionnaire tool (`ask_question`) rather than plain-text bullets; wait for user alignment before editing implementation files or spending compute (unless pre-authorized).
 - Once approved, tighten the spec/issue first, then verify **everything possible locally at \$0 against real artifacts** (real C++ compilation, real tiny checkpoints, exact byte/SHA256 parity on real files, dry-runs over saved receipts). Do **not** invent synthetic/mock unit tests or add unrequested docs/comments.
 - When paid hardware is required, design for full hardware saturation, per-stage durable artifact sync, and an automatic `EXIT` teardown trap so zero idle compute is billed.
