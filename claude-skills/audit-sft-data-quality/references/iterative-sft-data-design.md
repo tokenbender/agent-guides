@@ -1,5 +1,10 @@
 # Iterative SFT Capability and Data Design
 
+This is a supporting design reference. Run the failure-conditioned evidence,
+row-proof, serialization, lineage, and promotion gates in `SKILL.md` first. Use
+this document to extend that core workflow with pass@k interpretation,
+curriculum design, mixture strategy, judge review, and iteration economics.
+
 ## Contents
 
 - [Purpose](#purpose)

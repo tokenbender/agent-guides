@@ -1,195 +1,53 @@
 ---
 name: pdf-ocr-feedback
-description: High-accuracy OCR refinement workflow with self-scoring, Maj@K consensus voting, and targeted repair for page-faithful transcription.
+description: Refine unreliable OCR or scanned PDF transcription with page-level checks, targeted retries, and source-grounded resolution of equations, tables, or uncertain spans. Use when extraction has meaningful defects; do not OCR a clean text document merely because it is a PDF.
 ---
 
-# PDF OCR Feedback
+# PDF OCR feedback
 
-Use this skill when transcribing PDF pages through a vision model and a single OCR pass is not reliable enough.
+Produce page-faithful text with explicit uncertainty. Use intact source text when available; reserve OCR for the regions that need it. Respect the user's requested pages, output format, and transcription scope.
 
-## Objective
+## Output contract
 
-Produce page-faithful OCR with exact page boundaries, explicit uncertainty, and a practical target of at least 95/100 quality whenever the source allows it.
-
-## When to Use
-
-Escalate to this workflow when any of the following are true:
-- equations or mathematical notation matter,
-- tables have nontrivial structure,
-- the page is multi-column,
-- the scan is noisy, low-resolution, or artifact-heavy,
-- the document mixes languages, scripts, or handwriting,
-- or a single OCR pass leaves meaningful uncertainty.
-
-## Output Contract
-
-For every page:
-1. Preserve reading order.
-2. Capture all visible regions that matter: headers, footers, footnotes, captions, margin notes, table content, equation text, figure labels, and code blocks.
-3. Emit exact page delimiters:
+For requested page-faithful transcription, preserve original page order with:
 
 ```text
 ===== PAGE N =====
 <page text>
 ```
 
-4. Keep page order unchanged.
-5. Preserve equations, units, and table semantics.
-6. Never silently drop unknown symbols.
-7. If a tie cannot be resolved, mark the span explicitly as `[uncertain: "A" | "B"]`.
+Preserve reading order, column structure, captions, footnotes, equations, units, table relationships, and code where present and in scope. Mark unreadable material instead of silently dropping or inventing it. Use `[uncertain: "A" | "B"]` for unresolved alternatives.
 
-## Pipeline Overview
+## Initial pass and review
 
-```text
-For each page:
-  1. Pass-1 OCR
-  2. Self-evaluate on a 0-100 rubric
-  3. If score >= 95 and no red flags -> ACCEPT
-  4. Else run Maj@K escalation:
-     a. Generate K-1 additional independent passes
-     b. Vote at the smallest reliable unit
-     c. Re-score the merged result
-     d. If still weak, repair only flagged spans
-  5. Stop when accepted, capped, or no longer improving
-```
+Transcribe each requested defective page or region once. Compare it with the source image, especially at column boundaries and around numerical or mathematical content. Inspect available high-risk spans rather than manufacturing a fixed number of examples on every page.
 
-## Phase 1: Initial Transcription
+For a substantial transcription, the following rubric can prioritize repairs:
 
-For the first pass on every page:
-1. Transcribe the full page faithfully.
-2. Preserve top-to-bottom, left-to-right reading order. For multi-column pages, process column-by-column.
-3. Do not skip difficult regions; capture them or mark them uncertain.
-4. Keep formatting structure when it carries meaning, such as headings, lists, table rows, and code blocks.
+- structure: 25 points;
+- completeness: 25 points;
+- character and numeric accuracy: 20 points;
+- layout-sensitive content: 20 points;
+- noise and garbling: 10 points.
 
-## Phase 2: Self-Evaluation
+A score is a review heuristic, not a measured accuracy percentage or calibrated confidence. A score of 95 does not establish 95% correctness. For a small repair, direct source comparison and a concise uncertainty note are enough.
 
-Switch into evaluator mode. In this phase you do not edit text; you only score, flag, and decide whether the page is accepted or escalated.
+Escalate actual defects even when the score is high: skipped columns, ambiguous cell assignments, uncertain operators, missing regions, or conflicting transcriptions that affect meaning.
 
-### Scoring Rubric
+## Targeted repair and optional consensus
 
-Score each page on a 0-100 scale across five dimensions:
-- Structural fidelity: 0-25
-- Completeness: 0-25
-- Character and numeric accuracy: 0-20
-- Layout-sensitive content: 0-20
-- Noise and garbling: 0-10
+First re-read or crop the disputed source region using available tools. Cross-check recurring symbols, proper nouns, and citations within the source when useful.
 
-### What to Check
+If the uncertainty persists and multiple independent reads are practical, use three total OCR candidates; at most five for a genuinely difficult page. Do not describe correlated outputs as independent verification. Vote at the smallest meaningful unit: table cell, line, symbol, or equation operator.
 
-- Structural fidelity: headings, paragraph breaks, list structure, column order, and section boundaries.
-- Completeness: no dropped text regions, no truncated lines, no missing footnotes or captions.
-- Character and numeric accuracy: symbols, digits, citation numbers, units, and OCR confusions such as `0/O`, `1/l`, or `rn/m`.
-- Layout-sensitive content: table cells, equation operators, superscripts, subscripts, code tokens, and figure labels.
-- Noise and garbling: repeated fragments, hallucinated text, gibberish, or broken words.
+Agreement is not proof. The visible source decides when it is legible; majority voting must not overwrite contradictory source evidence. If no supported resolution exists, retain an uncertainty marker. Do not fill a damaged region from contextual plausibility alone.
 
-### Red Flags
+Repair only flagged spans. Preserve accepted text. Use the current harness's available OCR, vision, and local rendering tools; do not assume a particular model, API key, or callable tool exists.
 
-Any red flag forces escalation even if the numeric score is high:
-- an acknowledged unreadable region with no transcription attempt,
-- a suspected skipped column,
-- an ambiguous table grid or cell assignment,
-- an equation with uncertain structure or operators,
-- more than two unresolved uncertainty markers on the page,
-- conflicting variants that remain unresolved after voting.
+## Bounded completion
 
-### Mandatory Spot-Check
+Stop when the requested content is complete and material defects are resolved, or when further attempts do not improve the evidence. By default, use at most two targeted repair rounds after the initial pass and at most five OCR candidates per page. User-specified limits take precedence. Do not launch a large paid OCR batch without the required scope and authorization.
 
-For every scored page:
-1. Pick 3-5 high-risk snippets, such as equations, numbers, citations, table cells, or proper nouns.
-2. Explain why each snippet is risky.
-3. Record confidence for each snippet.
-4. Flag any snippet below 80 percent confidence for retry or repair.
+If a page remains partly unreadable, deliver the verified portion with exact page/span limitations. Ask for a better source only when the missing material prevents the requested result. Continue independent pages while awaiting it.
 
-### Evaluation Format
-
-```text
-PAGE N - Score: XX/100
-  Structural Fidelity: XX/25 - [notes]
-  Completeness: XX/25 - [notes]
-  Character/Numeric Accuracy: XX/20 - [notes]
-  Layout-Sensitive Content: XX/20 - [notes]
-  Noise/Garbling: XX/10 - [notes]
-  Red Flags: [list or "none"]
-  Spot-Check:
-    1. "snippet text" - risk: [reason] - confidence: [high/medium/low]
-    2. ...
-  Decision: ACCEPT / ESCALATE (reason)
-```
-
-## Phase 3: Maj@K Consensus Voting
-
-Use this phase for pages scoring below 95 or pages with any red flag.
-
-### Additional Passes
-
-1. Generate `K-1` additional independent passes.
-2. Use `K=3` by default.
-3. Use `K=5` for hard pages: equations, dense tables, multi-column layouts, handwriting, mixed scripts, or poor scans.
-4. Keep the passes independent. Do not anchor later passes to the first pass.
-
-### Voting Rules
-
-- Default to line-level voting.
-- For a disagreement, shrink the dispute to the smallest meaningful span.
-- Majority wins when a clear majority exists.
-- If the vote is tied, choose the most contextually consistent variant only when the evidence is strong.
-- If no clear winner exists, keep the span explicit as `[uncertain: ...]`.
-
-### Special Cases
-
-- Numbers and equations: vote at character level when needed.
-- Tables: vote per cell, not per line.
-- Proper nouns and citations: cross-check against other occurrences in the document.
-
-### Consensus Output
-
-Produce one merged transcription per page:
-- majority-agreed content passes through unchanged,
-- disputed spans are either resolved or marked uncertain,
-- remaining uncertain spans are queued for targeted repair.
-
-## Phase 4: Targeted Span Repair
-
-Only repair flagged spans. Do not regenerate accepted text.
-
-1. Identify unresolved or low-confidence spans.
-2. Re-read only those regions from the source.
-3. Replace the uncertain span if the repair is clearly better.
-4. Re-score the page after repair.
-
-## Phase 5: Final Merge and Summary
-
-Assemble the final document in original page order with exact delimiters preserved.
-
-Append a short refinement summary:
-
-```text
-## OCR Refinement Summary
-
-Total pages: N
-Pass-1 accepted: [pages]
-Maj@K escalated: [pages]
-Targeted repair needed: [pages]
-Final scores: [page -> score]
-Remaining uncertain spans: [count and pages]
-Iterations used: [count]
-```
-
-## Stopping Criteria
-
-Stop when the first applicable rule fires:
-1. Accept: score at least 95, no red flags, and output contract satisfied.
-2. Diminishing returns: less than 2 points of improvement across consecutive rounds.
-3. Hard cap per page: 3 total iterations.
-4. Hard cap global: 5 refinement iterations across the full document.
-
-If a page hits the cap below 95, accept it only with an explicit note about the remaining uncertain spans.
-
-## Anti-Patterns
-
-- Never invent text that appears in none of the OCR passes.
-- Never skip reading-order validation on multi-column pages.
-- Never score a page without filling the rubric and the spot-check.
-- Never regenerate a whole page when only a few spans are weak.
-- Never exceed `K=5`.
-- Never round up uncertain work into a confident score.
+When a repair report is requested or useful, record actual pages processed, extraction method, replaced spans/pages, remaining uncertainties, and attempts performed. Do not generate empty comparison artifacts or claim accuracy that was not measured. Render and visually inspect only the pages/regions needed to resolve or validate the transcription.

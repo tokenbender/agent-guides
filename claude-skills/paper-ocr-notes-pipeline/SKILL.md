@@ -1,210 +1,55 @@
 ---
 name: paper-ocr-notes-pipeline
-description: Canonical end-to-end workflow for turning a paper PDF or URL into grounded OCR artifacts and a teachable notes.md.
+description: Create a durable, teachable paper-notes package from a PDF or paper URL, preserving source identity, equations, evidence, and extraction provenance. Use when the user asks for saved paper notes or an ingestion package; do not turn an ordinary paper question or short summary into a file-producing pipeline.
 ---
 
-# Paper OCR Notes Pipeline
+# Paper notes pipeline
 
-This skill is a reusable policy for paper ingestion and note production. It must stay self-contained and work in any workspace.
+Produce the requested notes package from the actual paper. Keep it self-contained, source-grounded, and readable. User-specified scope, sections, output format, and existing authorization take precedence over this skill's defaults within the app's instruction hierarchy.
 
-Do not require any companion `README.md` or local notes file to run this workflow. If one exists, treat it only as supplemental context.
+## Intake and identity
 
-## Objective
+Resolve the paper's title, authors, identifier, and version from the source. Use the user's output root; otherwise follow the workspace's deliverable convention, or use `./papers-articles/<paper-slug>/` when none exists. Infer a sensible slug without asking.
 
-Generate a self-contained notes package from a paper source while preserving provenance, factual grounding, OCR quality, and teachability.
+A title, author, or version mismatch means the extraction is not yet trustworthy. Recheck the source once using a different available route. If the correct source remains inaccessible, report exactly what is missing and finish any independent work that does not depend on it. Do not retry the same failure indefinitely or write plausible notes from a different paper.
 
-## Inputs
+## Choose extraction by evidence
 
-- One of: a PDF path, a paper URL, or an arXiv abs URL.
-- Optional: preferred folder slug.
-- Optional: output root directory.
+Prefer official HTML/source or an intact PDF text layer. Inspect relevant equations, tables, figures, and reading order visually when their correctness matters. OCR is a fallback for scanned or materially defective regions, not a mandatory ritual for every paper.
 
-## Output Root Resolution
+When OCR needs refinement, use `pdf-ocr-feedback` if available. Otherwise preserve page boundaries, mark uncertain spans, and repair only the disputed regions with available tools. Never claim OCR was performed when the text came from native extraction.
 
-Use this priority order:
-1. If the user provides an output root, use it.
-2. Else create and use `./papers-articles` in the current working directory.
+For the default package, save:
 
-## Output Contract
+- the source PDF when available and appropriate, or a source link with identifier/version;
+- `notes.md`, the primary deliverable;
+- a compact provenance/index file when useful to navigate multiple artifacts;
+- page-delimited extraction text and a repair report only when those artifacts were produced or requested.
 
-Create a dedicated folder:
+If a canonical OCR package is explicitly requested, keep its requested filenames and document extraction method and replaced pages accurately. Do not fabricate an OCR comparison report for an operation that never ran.
 
-```text
-<output-root>/<paper-slug>/
-```
+## Build the notes
 
-Required files:
-- source file: `<paper>.pdf` or `link.txt` for URL-only sources,
-- `notes.md` as the primary deliverable,
-- `README.md` as a paper-local artifact and provenance index,
-- `<paper>.ocr.feedback-loop.txt` as the final OCR output,
-- `<paper>.ocr.feedback-loop-comparison.md` as the OCR replacement report.
+Use `technical-writing-workflow` when available for substantial notes. Otherwise follow the same core approach: explain the mechanism, give evidence, and state its boundary.
 
-`notes.md` must be sufficient for a new reader to learn the paper without opening extra files.
+For full teaching notes, this is the default structure; adjust to the user's requested form and omit inapplicable sections:
 
-## Canonical Notes Sections
+1. Paper title and source/version.
+2. Short summary: problem, central idea, main result, decisive limitation.
+3. Beginner's guide: prerequisites, terms, one useful concrete example.
+4. Paper summary: contributions and experimental context.
+5. Deep dive: method, definitions, relevant equations, derivation or implementation details.
+6. Critical analysis: assumptions, failure modes, evidence gaps, and a discriminating follow-up when useful.
+7. Learning path when the user wants teaching material.
+8. Key equations when the paper has equations worth explaining.
+9. References.
 
-Use these headings in order:
-1. `# <Paper Title>`
-2. `## TL;DR`
-3. `## Beginner's Guide`
-4. `## Paper Summary`
-5. `## Deep Dive`
-6. `## Critical Analysis`
-7. `## Learning Path`
-8. `## Key Equations Summary`
-9. `## References`
+Collect source-backed facts before inference: objectives, setup, datasets, baselines, metrics, results, and author-stated limitations. Keep a compact claim-to-source map while drafting; expose it only when useful or requested. Label your interpretations and distinguish proposed follow-up experiments from experiments the authors ran. Do not invent an experiments table for a theory-only paper.
 
-## Nested Skills
+## Review and finish
 
-- Use `pdf-ocr-feedback` for pagewise OCR refinement.
-- Use `technical-writing-workflow` while drafting and revising `notes.md`.
+Check identity, important numbers and symbols, definitions before use, baseline comparisons, and the strongest supported limitation. Review clarity and correctness together for short notes; use separate passes for a substantial package. Preserve page/section/table pointers for material claims.
 
-## Core Principles
+Inspect only unresolved regions rather than repeatedly rescanning the whole paper. Deliver after relevant checks pass and disclose unresolved source defects. Lack of an optional tool or companion skill is not a reason to abandon reachable work; lack of source evidence is a reason to narrow an unsupported claim.
 
-1. Reader intuition comes before technical detail.
-2. Do not blur distinct concepts.
-3. Evidence-first writing: claims point to table, figure, section, or page evidence.
-4. Revision is mandatory.
-5. Identity verification is mandatory before trusting extracted content.
-6. Uncertainty and limitations must be stated explicitly.
-
-## Workflow
-
-Follow the phases in order.
-
-### Phase 0 - Intake and setup
-
-1. Resolve canonical identity: title, authors, date/version, identifier (arXiv/DOI when available).
-2. Create output folder and store source.
-3. Initialize `notes.md` skeleton with required section order.
-4. Create paper-local `README.md` listing source and produced artifacts.
-
-### Phase 1 - Extraction and OCR feedback loop
-
-Use nested skill `pdf-ocr-feedback` for pagewise OCR refinement.
-
-Required OCR behavior:
-1. Pass-1 extraction across all pages.
-2. Per-page quality scoring and weak-page detection.
-3. Pass-2 retries only on weak pages.
-4. Merge pages in original order.
-
-Required OCR format:
-- Preserve `===== PAGE N =====` delimiters.
-- Preserve page order.
-- Record replaced pages and rationale in comparison report.
-
-### Phase 1.5 - Identity gate (mandatory)
-
-Before trusting extracted content, verify anchors:
-- title matches target,
-- author block matches reasonably,
-- identifier/date lines are consistent when available.
-
-If any anchor mismatches:
-1. reject extraction,
-2. rerun extraction,
-3. revalidate before proceeding.
-
-### Phase 2 - Ground-truth extraction (facts only)
-
-Collect source-backed facts only (no interpretation yet):
-- problem statement and failure mode,
-- contributions as stated by authors,
-- method overview,
-- key equations and definitions,
-- experimental setup: tasks, datasets, models, baselines, metrics, ablations/stress tests,
-- headline quantitative results,
-- limitations stated by authors.
-
-Stop condition: answer "what did they do" without guessing.
-
-### Phase 3 - Compose `notes.md` in strict order
-
-1. TL;DR (problem, key idea, 1-2 evidence numbers, caveat)
-2. Beginner's Guide (college-level, define symbols once, one concrete toy example)
-3. Paper Summary (problem recap, contributions, results, experiments table)
-4. Deep Dive (definitions, derivation steps, implementation sketch, optional pseudocode)
-5. Critical Analysis (assumptions, objections, failure modes, validation/refutation experiments)
-6. Learning Path (prereqs, next study steps, diagnostics)
-7. Key Equations Summary (equation + one-line meaning)
-
-While drafting, apply `technical-writing-workflow`:
-- anchor explanations in familiar ground,
-- define terms at point of need,
-- keep ontology and score ownership clear,
-- cut implementation-operator detail unless it matters scientifically,
-- keep claims tied to evidence.
-
-### Phase 4 - Exploration and consistency checks
-
-While reading and drafting, run these checks:
-
-Problem framing checks:
-- what exactly breaks and under what conditions,
-- where boundary conditions are stated.
-
-Method checks:
-- what estimator/objective is actually optimized,
-- which terms are additive vs multiplicative,
-- what comes from probabilities vs gradients vs external signals.
-
-Claims checks:
-- theoretical vs empirical claims separation,
-- strongest evidence source for each major claim,
-- missing ablations/OOD/calibration/compute analyses.
-
-Consistency checks:
-- terminology consistency across sections,
-- equation-to-implementation narrative alignment,
-- baseline independence assumptions where claimed,
-- proxy computability with stated costs.
-
-### Phase 5 - Revision passes (non-negotiable)
-
-1. Clarity pass:
-   - remove duplicates,
-   - ensure definitions appear before equations,
-   - soften overconfident wording where uncertainty exists.
-2. Correctness pass:
-   - detect concept conflations,
-   - remove unsupported claims,
-   - fix misleading pseudocode assumptions.
-3. Objection stress test:
-   - state strongest objection,
-   - provide rebuttal conditions,
-   - propose falsifiable tests.
-4. Update TL;DR caveat after all revisions.
-
-### Phase 6 - Quality gates (must pass all)
-
-- Accuracy: symbols and claims are correct and evidence-backed.
-- Completeness: experiments table includes tasks, baselines, metrics.
-- Teachability: beginner section is understandable by a college-level reader.
-- Critical rigor: at least one strong objection and a test plan.
-- Implementation sanity: pseudocode and grouping assumptions are coherent.
-
-## Inference and process optimization defaults
-- Prefer source-of-truth hierarchy:
-  1) official source text (arXiv source/HTML when available),
-  2) OCR feedback-loop output,
-  3) targeted visual rechecks for disputed pages.
-- Use selective rereads: only revisit sections needed for unresolved claims.
-- Maintain a claim-to-evidence ledger while writing to reduce drift.
-- Minimize full-document rescans unless identity gate or consistency checks fail.
-- Keep output deterministic: fixed section order and explicit caveats.
-
-## Common pitfalls to avoid
-
-- Over-summarizing without experimental context.
-- Concept conflation (baseline vs weighting, confidence vs correctness).
-- Pseudocode that violates grouping assumptions.
-- Omitting caveats/limitations.
-
-## Must not do
-
-- Do not depend on external README files for policy.
-- Do not rely on memory summaries over source evidence.
-- Do not finalize if identity gate fails.
-- Do not skip revision passes or quality gates.
+Independent extraction or reference checks may be delegated only when permitted, useful, and accompanied by concurrent local work. Keep final synthesis and claim scope coherent.

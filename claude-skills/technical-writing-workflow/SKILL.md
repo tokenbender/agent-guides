@@ -1,181 +1,61 @@
 ---
 name: technical-writing-workflow
-description: "Use for planning, researching, drafting, revising, or auditing technical write-ups, textbooks, papers, reports, READMEs, research notes, PR narratives, and public technical prose. Applies a full workflow, not only style rules: reader need, source audit, ontology, outline contracts, parallel research packets, serial synthesis, claim-boundary checks, plain-English rewrite, anti-LLM prose audit, citation audit, and final render or publication readiness."
+description: Draft, revise, and review technical explanations, reports, papers, READMEs, and PR narratives with clear mechanisms, source-backed claims, and proportionate verification. Use for substantive technical writing; handle a small wording edit directly without a research or planning workflow.
 ---
 
 # Technical writing workflow
 
-Use this skill when the user asks to write, rewrite, improve, audit, explain, teach, document, or publish technical material. Treat it as a workflow with checks, not as a prose vibe.
+Open the subject up without making it shallow. Preserve the user's audience, purpose, format, length, terminology, and requested scope.
 
-## Core rule
+## Choose the scale
 
-Open the subject up without making it shallow.
+- **Small edit or short explanation:** revise directly. Check meaning, terminology, and any factual claim you change. No intake questionnaire, ontology table, outline, script run, or extra artifact is required.
+- **Substantial technical draft:** establish the reader's next question, main claim, evidence, and argument order. Keep planning internal unless the user requests it or a decision materially affects the result.
+- **Paper, long report, or synthesis:** use the source audit, concept map, section contracts, and claim checks below where they help. Resolve contradictory sources before merging their conclusions.
 
-Every important explanation must name:
+Infer routine missing details from context. Ask a focused question only when a missing fact or decision would materially change the deliverable and cannot be recovered. Continue independent authorized work while waiting. A writing request authorizes preparing the writing; it does not by itself authorize sending or publishing it.
 
-1. the object or behavior being described
-2. the method, mechanism, or actor that changes it
-3. the evidence that supports the claim
-4. the boundary the claim is allowed to cover
+## Evidence before claim strength
 
-## Serial before parallel
+For each material claim identify the object, the mechanism or intervention, the supporting evidence, and its scope. Prefer primary papers, official documentation, measurements, code, and reproducibility artifacts. A social post or local note may point to evidence but cannot stand in for it.
 
-Serialize meaning. Parallelize collection.
+Preserve denominators, baselines, units, dates, uncertainty, and distinctions between measured results and inference. Do not invent a mechanism for an empirical correlation. Verify current or uncertain facts when they matter; do not launch external research for a self-contained rewrite unless factual correction is needed or requested.
 
-Do these serially before drafting:
-
-1. Define the reader and use case.
-2. Define scope and exclusions.
-3. Build the ontology table.
-4. Decide the argument order.
-5. Write chapter or section contracts.
-6. Resolve source contradictions.
-
-Then parallelize:
-
-- source packets
-- paper cards
-- glossary entries
-- examples
-- diagrams
-- exercises
-- tables
-- reference checks
-- local fact checks
-- counterexamples and failure modes
-
-Return to serial work for:
-
-- synthesis
-- final claim strength
-- voice and terminology
-- cross-references
-- final layout or render inspection
-
-## The workflow
-
-### 1. Intake
-
-Write a short brief before drafting:
-
-- audience
-- task the reader should perform after reading
-- source surface
-- deliverable format
-- deadline or depth target
-- claim-risk level
-
-If any of these are unknown, make a conservative assumption and state it briefly.
-
-### 2. Source audit
-
-Separate sources into evidence classes:
-
-- primary paper or official documentation
-- benchmark or measurement artifact
-- code or reproducibility artifact
-- technical blog or explainer
-- social post or pointer
-- local note or capture
-
-Do not let a pointer carry a claim that belongs to a paper, code artifact, or measurement.
-
-### 3. Ontology table
-
-For each major topic, create this table before drafting:
+For a complex explanation, a working concept map can contain:
 
 ```text
-Topic:
-Object:
-Method:
-Resource or behavior changed:
-Evidence:
-Boundary:
-Common beginner mistake:
-Best example:
+Object / method / behavior changed / evidence / boundary / likely misunderstanding / example
 ```
 
-This table is the backbone. If it is confused, the prose will be confused.
+For a long document, give each section a reader outcome, core evidence, and example. These are planning aids, not mandatory output sections.
 
-### 4. Outline contracts
+## Draft and revise
 
-Each section needs a job:
+Lead with the result or central claim, then answer the reader's next question. Introduce one idea at a time; explain unfamiliar terms at their point of use. Use concrete examples before abstraction when helpful. Keep runbook details out of conceptual prose unless they affect the contribution or the reader's decision.
 
-```text
-Section:
-Reader outcome:
-Core sources:
-Example:
-Warning:
-What not to include:
-```
+Use concise, connected paragraphs, active voice, and familiar words. Retain technical vocabulary that earns its place. Match the requested genre: a PR description, paper, tutorial, and chat explanation need different levels of detail. Use headings, tables, and lists for real structure rather than as a default wrapper around every answer.
 
-Do not write full prose until the contracts are stable.
+Avoid stock phrases, vague hype, invented compound labels, repeated conclusions, and automatic adversarial contrasts such as "This is not X; it is Y." Use a contrast when it explains an actual distinction. Preserve the user's intentional voice; a linter's preference is not a reason to flatten it.
 
-### 5. Draft
+For technical edits, keep identifiers, equations, code, numbers, citations, and qualifications intact unless the task calls for changing them. If a supplied claim is unsupported, flag or qualify that claim instead of quietly strengthening it.
 
-Write from the reader's next question.
+## Review proportionately
 
-- Start with the familiar.
-- Introduce one new idea per paragraph.
-- Name the concept after the intuition lands.
-- Use concrete examples before abstraction when possible.
-- Keep implementation runbook detail out of main prose unless implementation is the contribution.
+1. Check that the requested content is present and the argument is coherent.
+2. Check high-impact facts, definitions, quantitative comparisons, and claim boundaries against the source.
+3. Remove duplication and unclear wording without dropping unique requirements.
+4. Check that each citation supports its nearby claim; distinguish sources read directly from inaccessible references.
+5. Preview or render layout-sensitive deliverables with an available suitable tool. Do not render an unrelated format merely to satisfy this skill.
 
-### 6. Rigor pass
+Once the relevant checks pass, deliver. Repeat checks only after a material change or to resolve an actual issue. Report material verification gaps; do not imply that a script pass proves factual accuracy.
 
-Check every claim:
+## Tools and collaboration
 
-- what changed
-- what stayed fixed
-- what evidence supports it
-- what the claim does not prove
-- whether examples are examples rather than definitions
-- whether setup details affect validity, comparability, or reproducibility
+Use the current harness's available tools; resolve supporting paths relative to this skill directory. When permitted and useful, delegate independent source packets, examples, reference checks, or counterarguments while doing useful local work. Keep argument design, source reconciliation, final claim strength, and prose synthesis with the parent. Do not delegate a small edit or fan out merely because this skill mentions parallel work.
 
-### 7. Plain-English pass
+Apply applicable user instructions ahead of advisory skill conventions, within the app's instruction hierarchy. If another instruction file causes a pause, identify the path and exact relevant instruction rather than inventing an approval requirement.
 
-Use active voice. Prefer short sentences. Use everyday words where they preserve precision.
-
-Replace:
-
-- utilise with use
-- leverage with use
-- facilitate with help
-- in order to with to
-- with regard to with about
-- commence with start
-- sufficient with enough
-
-Keep technical terms when they are needed, but earn them before using them heavily.
-
-### 8. Anti-LLM prose pass
-
-Remove patterns that make prose feel generated unless the user explicitly wants that register:
-
-- em dashes as default punctuation
-- "not only X but also Y"
-- "in conclusion", "moreover", "furthermore", "it is worth noting"
-- "delve", "landscape", "robust", "seamless", "holistic", "unlock", "empower"
-- vague hype such as groundbreaking, revolutionary, transformative
-- generic title forms such as "The power of X", "Ultimate guide", "X, explained"
-
-### 9. Citation and source pass
-
-Check that citations support the exact claim nearby. Prefer primary sources. Use descriptive link text when writing web prose. For PDFs or papers, include enough source detail to let another reader recover the artifact.
-
-### 10. Final readiness
-
-Before delivering:
-
-- run applicable scripts in `scripts/`
-- verify links or local file paths when practical
-- for PDF/DOCX/HTML deliverables, render or preview the final artifact
-- state any checks that could not be completed
-
-## Scripts
-
-The bundled scripts are optional but preferred for non-trivial prose:
+The existing scripts are optional review aids for substantial file-backed prose:
 
 ```bash
 python scripts/prose_audit.py path/to/file.md
@@ -184,4 +64,6 @@ python scripts/citation_audit.py path/to/file.md
 python scripts/anti_llm_pattern_audit.py path/to/file.md
 ```
 
-Use script output as a review surface, not as an automatic rewrite command.
+Inspect a script's usage before running it. Its findings require judgment; do not automatically rewrite or expand the task to eliminate every match.
+
+Guidance basis: [OpenAI Astra prompting guidance](https://developers.openai.com/api/docs/guides/latest-model). This skill contains writing workflow guidance, not model or API configuration.
