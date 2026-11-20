@@ -54,6 +54,7 @@ synchronizer is installed.
 ### Writing
 | Skill | Purpose |
 |-------|---------|
+| `ncert-textbook` | NCERT Class IX–XI + Feynman discovery-before-explanation technical textbook writing & 4-bit lossless A4 WeasyPrint typesetting grounded in real traces/data |
 | `technical-writing-workflow` | Full writing workflow: ontology tables, outline contracts, rigor/plain-English/anti-LLM passes, audit scripts |
 | `blade-and-contract` | Provocative-but-defensible rhetoric: lead with the blade, anchor with the contract |
 
